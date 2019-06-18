@@ -1,0 +1,44 @@
+Rule List
+
+EC Activate:
+0) make PAF
+1) make IL8
+
+EC PIS:
+2) make PAF
+
+PMN:
+3) make IL1ra
+4) WBC Migrate calculation
+
+PMN Burst:
+5) make TNF
+6) make IL1
+7) Program the Cell Death;
+
+PMN sniff
+8) Follow IL8
+
+Mono:
+9) make TNFr
+10) make IL1r
+11) make IL1ra
+12) make sTNFr
+13) make sIL1r
+14) make GCSF
+15) make IL8
+16) make IL12
+17) make IL10
+18) make IL10
+19) make TNF
+20) make IL10 if deactivated
+
+THO:
+21) Determine proStatus
+
+TH1: make IFNg
+22) determine activation Status
+
+TH2: determine activation Status
+23) make Il4
+24) make Il10
