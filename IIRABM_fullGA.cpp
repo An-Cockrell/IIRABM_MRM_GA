@@ -67,6 +67,8 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 		int i,step,iend,jend,antibiotic1,antibiotic2,istep,k,j;
 		int numABX;
 		generator.seed(seed);
+		cout<<"oxyHeal="<<oxyHeal<<"\n";
+//		return allSignalsReturn;
 //		cout<<"Test10\n";
 		getRuleMatrix(internalParameterization,numMatrixElements);
 		initialize();
@@ -81,14 +83,17 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 		numABX=0;
 		injure_infectionFRD(inj_number);
 		for(i=0;i<numTimeSteps;i++){
+
 			step++;
 			istep++;
 			if(step==injuryStep){step=1;}
 			antibiotic1++;
 			antibiotic2++;
-			updateTrajectoryOutput(allSignals,i);
+
 			simulationStep(i,infectSpread,numInfectRepeat,oxyHeal,numRecurInj,numABX);
 			updateSystemOxy(istep);
+			updateTrajectoryOutput(allSignals,i);
+			cout<<"i="<<i<<" "<<oxyDeficit<<"\n";
 			if(oxyDeficit>8161||(oxyDeficit<5&&i>0)){
 				for(iend=i+1;iend<numTimeSteps;iend++){
 					for(jend=0;jend<20;jend++){
@@ -100,6 +105,21 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 			if(oxyDeficit>=8161){
 					break;
 			}
+
+			if(i==62){
+// 				for(j=0;j<monoArray.size();j++){
+// //					cout<<j<<" "<<monoArray[j].xLoc<<" "<<monoArray[j].yLoc<<"\n";
+// 					cout<<j<<" "<<monoArray[j].IL_1r<<"\n";
+// 					cout<<j<<" "<<monoArray[j].TNFr<<"\n";
+// 				}
+				cout<<"Total IL10="<<total_IL10<<"\n";
+				cout<<"Total IL1="<<total_IL1<<"\n";
+				cout<<"Total TNF="<<total_TNF<<"\n";
+				// for(j=0;j<ecArray.size();j++){
+				// 	cout<<j<<" "<<ecArray[j].endotoxin<<"\n";
+				// }
+			}
+
 		}
 
 		k=0;

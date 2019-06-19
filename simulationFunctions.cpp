@@ -727,8 +727,9 @@ float cytokineProductionRule(int ruleRow, int index, float tnfr, float il1r){
   for(i=0;i<numRuleParams-1;i++){
     tempSum+=currentCyto[i]*RM[ruleRow][i];
   }
+//  cout<<"Const="<<RM[ruleRow][16]<<"\n";
   tempSum+=RM[ruleRow][16];
-  if(tempSum<0){tempSum=0;}
+//  if(tempSum<0){tempSum=0;}
   return tempSum;
 }
 
@@ -787,9 +788,10 @@ void getRuleMatrix(float internalParam[], int numMatEls){
   int i,j,k=0;
   for(i=0;i<numRules;i++){
     for(j=0;j<numRuleParams;j++){
+//      cout<<"INPUT="<<internalParam[k]<<"\n";
       RM[i][j]=internalParam[k];
       k++;
     }
   }
-
+// cout<<"RM[0][16]="<<RM[0][16]<<"\n";
 }

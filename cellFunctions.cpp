@@ -34,6 +34,21 @@ extern void injure_infectionFRD(int inj_number);
 extern float cytokineProductionRule(int ruleRow, int cellIndex, float tnfr, float il1r);
 extern float cytokineComboRule(int ruleRow, int cellIndex, float tnfr, float il1r);
 
+
+float PAFmult=1;
+float TNFmult=1;
+float IL1mult=1;
+float IFNgmult=1;
+float IL4mult=1;
+float IL8mult=1;
+float IL10mult=1;
+float IL12mult=1;
+float GCSFmult=1;
+float sTNFrmult=1;
+
+float sIL1rmult=1;
+float IL1ramult=1;
+
 void heal(int index);
 void applyAntibiotics();
 
@@ -58,6 +73,7 @@ void EC::activate(){
 	ec_stick++;
 	PAF=cytokineProductionRule(0,id,0,0);
 	IL8=cytokineProductionRule(1,id,0,0);
+//	cout<<"id="<<id<<"PAF="<<PAF<<"\n";
 }
 
 void EC::ECfunction(float oxyHeal){
@@ -132,6 +148,38 @@ void pmn::pmn_function(int pmnID){
 			}}
 	}
 }
+
+// void pmn::pmn_burst(int pmnID){
+// 	int x,y,id;
+//
+// 	x=xLoc;
+// 	y=yLoc;
+// 	id=y*xDim+x;
+// 	ecArray[id].cytotox=max(float(10),ecArray[id].TNF);
+// 	ecArray[id].oxy=100;
+// 	ecArray[id].ec_roll=0;
+// 	ecArray[id].ec_stick=0;
+// 	ecArray[id].ec_migrate=0;
+// 	if(TNFmult<=1){
+// 		ecArray[id].TNF=(ecArray[id].TNF+1)*TNFmult;
+// 	} else{
+// 		ecArray[id].TNF=ecArray[id].TNF+1+TNFmult-1;
+// 	}
+// 	if(IL1mult<=1){
+// 		ecArray[id].IL1=(ecArray[id].IL1+1)*IL1mult;
+// 	} else{
+// 		ecArray[id].IL1=ecArray[id].IL1+1+IL1mult-1;
+// 	}
+// 	pmn_age=pmn_pcd;
+// 	pmn_pcd=pmn_pcd-1+max(float(0),(ecArray[id].TNF+ecArray[id].IFNg+ecArray[id].GCSF-
+// 		ecArray[id].IL10)/100);
+// 	if(pmn_age<0){
+// 		x=xLoc;
+// 		y=yLoc;
+// 		pmnArray.erase(pmnArray.begin()+pmnID);
+// 		cellGrid[x][y]--;
+// 	}
+// }
 
 void pmn::pmn_burst(int pmnID){
 	int x,y,id;
@@ -367,7 +415,7 @@ void TH2::TH2function(int index){
 
 void pmn_marrow::pmn_marrow_function(){
 	int x,y,temp,n,i;
-//	if(total_GCSF>3000){total_GCSF=3000;}
+  if(total_GCSF>3000){total_GCSF=3000;}
 	n=int(1+total_GCSF/100);
 
 	for(i=0;i<n;i++){
