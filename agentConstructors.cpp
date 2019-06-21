@@ -93,6 +93,7 @@ TH0::TH0(int x, int y){
 	proTH1=0;
 	proTH2=0;
 	orientation=distribution8(generator); //n,e,s,w
+	activation=0;
 //	cout<<TH0_age<<" "<<orientation<<"\n";
 }
 

@@ -22,24 +22,18 @@ _IIRABM.mainSimulation.argtypes = (ctypes.c_float, ctypes.c_int, ctypes.c_int,
 # _IIRABM.mainSimulation.restype = ndpointer(
 #     dtype=ctypes.c_float, shape=(20, 100))
 
-
-# # Read Rule numMatrix
-# RuleMatrix = genfromtxt('RuleMatrix.csv', delimiter=',')
-# # print(RuleMatrix)
-# injurySupplement=[-0.5,-0.05,-2,-0.25]
-# internalParameterization = RuleMatrix.flatten()
-# internalParameterization=np.hstack(internalParameterization,injurySupplement)
-
 internalParameterization=np.load('baseParameterization.npy')
-numMatrixElements = internalParameterization.shape[0]
-#c_float_p = ctypes.POINTER(ctypes.c_float)
-np.asarray(internalParameterization, dtype=np.float32)
-# print(internalParameterization[16])
-injurySize = np.array([25,27,30,32,35])
-oxyHeal = np.array([0.05,0.075,0.1,0.0125,0.15])
-infectSpread = np.array([2, 4, 6])
+# injurySize = np.array([25,27,30,32,35])
+# oxyHeal = np.array([0.05,0.075,0.1,0.0125,0.15])
+# infectSpread = np.array([2, 4, 6])
+# numRecurInj = 2
+# numInfectRepeat = np.array([1, 2])
+# seed = 0
+injurySize = np.array([27])
+oxyHeal = np.array([0.075])
+infectSpread = np.array([2])
 numRecurInj = 2
-numInfectRepeat = np.array([1, 2])
+numInfectRepeat = np.array([1])
 seed = 0
 array_type = ctypes.c_float*numMatrixElements
 
@@ -53,8 +47,18 @@ for i in range(injurySize.shape[0]):
                     [data, [oxyHeal[j], infectSpread[k], numRecurInj, numInfectRepeat[m], injurySize[i]]])
 data = np.delete(data, 0, 0)
 
-test = _IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
-                              numInfectRepeat, injurySize, seed,
-                              numMatrixElements,
-                              array_type(*internalParameterization))
-print(test.type)
+numcount = int(data.shape[0]/size)
+for count in range(numcount):
+    #    print(count)
+    answerSum = 0
+    for seed in range(100):
+        if(rank+count*size<data.shape[0]):
+            p1 = data[rank+count*size, 0]
+            p2 = int(data[rank+count*size, 1])
+            p3 = int(data[rank+count*size, 2])
+            p4 = int(data[rank+count*size, 3])
+            p5 = int(data[rank+count*size, 4])
+            result = _IIRABM.mainSimulation(p1, p2, p3, p4, p5, seed, numMatrixElements, array_type(*internalParameterization))
+        answerSum = answerSum+result
+    if(answerSum>40 and answerSum<60):
+        print(count, rank, p1, p2, p3, p4, p5, answerSum)

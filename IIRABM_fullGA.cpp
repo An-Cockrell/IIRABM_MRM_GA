@@ -48,6 +48,7 @@ uniform_int_distribution<int> distribution3(0,2);
 uniform_int_distribution<int> distribution2(0,1);
 
 float RM[numRules][numRuleParams];
+float injurySupplement[4];
 
 float system_oxy,oxyDeficit,totalInfection,total_TNF,total_sTNFr,total_IL10,
 total_IL6,total_GCSF,total_proTH1,total_proTH2,total_IFNg,total_PAF,
@@ -64,9 +65,14 @@ extern const float antibioticMultiplier;
 extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 	int numRecurInj, int numInfectRepeat, int inj_number, int seed, int numMatrixElements, float* internalParameterization){
 
+// extern "C" int mainSimulation(float oxyHeal, int infectSpread,
+// 	int numRecurInj, int numInfectRepeat, int inj_number, int seed, int numMatrixElements, float* internalParameterization){
+
 		int i,step,iend,jend,antibiotic1,antibiotic2,istep,k,j;
 		int numABX;
 		generator.seed(seed);
+//		cout<<"oxyHeal="<<oxyHeal<<"\n";
+//		return allSignalsReturn;
 //		cout<<"Test10\n";
 		getRuleMatrix(internalParameterization,numMatrixElements);
 		initialize();
@@ -81,14 +87,17 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 		numABX=0;
 		injure_infectionFRD(inj_number);
 		for(i=0;i<numTimeSteps;i++){
+
 			step++;
 			istep++;
 			if(step==injuryStep){step=1;}
 			antibiotic1++;
 			antibiotic2++;
-			updateTrajectoryOutput(allSignals,i);
+
 			simulationStep(i,infectSpread,numInfectRepeat,oxyHeal,numRecurInj,numABX);
 			updateSystemOxy(istep);
+			updateTrajectoryOutput(allSignals,i);
+			//			cout<<"i="<<i<<" "<<oxyDeficit<<"\n";
 			if(oxyDeficit>8161||(oxyDeficit<5&&i>0)){
 				for(iend=i+1;iend<numTimeSteps;iend++){
 					for(jend=0;jend<20;jend++){
@@ -99,8 +108,16 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 			}
 			if(oxyDeficit>=8161){
 					break;
+//					return 1;
 			}
+
 		}
+		// if(oxyDeficit>=8161){
+		// 	return 1;
+		// } else {
+		// 	return 0; //still alive
+		// }
+
 
 		k=0;
 		for(j=0;j<20;j++){
@@ -110,6 +127,7 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 			}
 		}
 		return allSignalsReturn;
+
 }
 
 void simulationStep(int step,int infectSpread,int numInfectRepeat,float oxyHeal,int numRecurInj, int numABX){

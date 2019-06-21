@@ -26,6 +26,9 @@ extern vector<TH2_germ> TH2_germArray;
 extern mt19937 generator;
 extern uniform_int_distribution<int> distribution10k,distribution100,distribution10,distribution8;
 
+extern float RM[numRules][numRuleParams];
+extern float injurySupplement[4];
+
 void getAhead(int orient, int x, int y, int *xl, int *xm, int *xr, int *yl, int *ym, int *yr);
 extern void wiggle(int* orientation);
 extern void adjustOrientation(int* orientation, int leftOrRight);
@@ -33,6 +36,7 @@ extern void move(int orient, int* x, int* y);
 extern void injure_infectionFRD(int inj_number);
 extern float cytokineProductionRule(int ruleRow, int cellIndex, float tnfr, float il1r);
 extern float cytokineComboRule(int ruleRow, int cellIndex, float tnfr, float il1r);
+
 
 void heal(int index);
 void applyAntibiotics();
@@ -58,6 +62,7 @@ void EC::activate(){
 	ec_stick++;
 	PAF=cytokineProductionRule(0,id,0,0);
 	IL8=cytokineProductionRule(1,id,0,0);
+//	cout<<"id="<<id<<"PAF="<<PAF<<"\n";
 }
 
 void EC::ECfunction(float oxyHeal){
@@ -77,17 +82,17 @@ void EC::patch_inj_spread(float oxyHeal){
 
 	if((oxy<60)&&(oxy>30)){ //ischemia
 		ec_roll++;
-		oxy-=0.5;
+		oxy-=injurySupplement[0];
 		PAF=cytokineProductionRule(2,id,0,0);
 		for(i=0;i<8;i++){
-			ecArray[neighbors[i]].oxy-=0.05;}
+			ecArray[neighbors[i]].oxy-=injurySupplement[1];}
 	}
 		if(oxy<=30){ //infarction
 			ec_stick++;
-			oxy-=2;
+			oxy-=injurySupplement[2];
 			PAF=cytokineProductionRule(2,id,0,0);
 		for(i=0;i<8;i++){
-			ecArray[neighbors[i]].oxy-=0.25;
+			ecArray[neighbors[i]].oxy-=injurySupplement[3];
 			if(ecArray[neighbors[i]].oxy<0){ecArray[neighbors[i]].oxy=0;}
 		}
 	}
@@ -367,7 +372,7 @@ void TH2::TH2function(int index){
 
 void pmn_marrow::pmn_marrow_function(){
 	int x,y,temp,n,i;
-//	if(total_GCSF>3000){total_GCSF=3000;}
+  if(total_GCSF>3000){total_GCSF=3000;}
 	n=int(1+total_GCSF/100);
 
 	for(i=0;i<n;i++){
