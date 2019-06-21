@@ -26,6 +26,9 @@ extern vector<TH2_germ> TH2_germArray;
 extern mt19937 generator;
 extern uniform_int_distribution<int> distribution10k,distribution100,distribution10,distribution8;
 
+extern float RM[numRules][numRuleParams];
+extern float injurySupplement[4];
+
 void getAhead(int orient, int x, int y, int *xl, int *xm, int *xr, int *yl, int *ym, int *yr);
 extern void wiggle(int* orientation);
 extern void adjustOrientation(int* orientation, int leftOrRight);
@@ -34,20 +37,6 @@ extern void injure_infectionFRD(int inj_number);
 extern float cytokineProductionRule(int ruleRow, int cellIndex, float tnfr, float il1r);
 extern float cytokineComboRule(int ruleRow, int cellIndex, float tnfr, float il1r);
 
-
-float PAFmult=1;
-float TNFmult=1;
-float IL1mult=1;
-float IFNgmult=1;
-float IL4mult=1;
-float IL8mult=1;
-float IL10mult=1;
-float IL12mult=1;
-float GCSFmult=1;
-float sTNFrmult=1;
-
-float sIL1rmult=1;
-float IL1ramult=1;
 
 void heal(int index);
 void applyAntibiotics();
@@ -93,17 +82,17 @@ void EC::patch_inj_spread(float oxyHeal){
 
 	if((oxy<60)&&(oxy>30)){ //ischemia
 		ec_roll++;
-		oxy-=0.5;
+		oxy-=injurySupplement[0];
 		PAF=cytokineProductionRule(2,id,0,0);
 		for(i=0;i<8;i++){
-			ecArray[neighbors[i]].oxy-=0.05;}
+			ecArray[neighbors[i]].oxy-=injurySupplement[1];}
 	}
 		if(oxy<=30){ //infarction
 			ec_stick++;
-			oxy-=2;
+			oxy-=injurySupplement[2];
 			PAF=cytokineProductionRule(2,id,0,0);
 		for(i=0;i<8;i++){
-			ecArray[neighbors[i]].oxy-=0.25;
+			ecArray[neighbors[i]].oxy-=injurySupplement[3];
 			if(ecArray[neighbors[i]].oxy<0){ecArray[neighbors[i]].oxy=0;}
 		}
 	}
@@ -148,38 +137,6 @@ void pmn::pmn_function(int pmnID){
 			}}
 	}
 }
-
-// void pmn::pmn_burst(int pmnID){
-// 	int x,y,id;
-//
-// 	x=xLoc;
-// 	y=yLoc;
-// 	id=y*xDim+x;
-// 	ecArray[id].cytotox=max(float(10),ecArray[id].TNF);
-// 	ecArray[id].oxy=100;
-// 	ecArray[id].ec_roll=0;
-// 	ecArray[id].ec_stick=0;
-// 	ecArray[id].ec_migrate=0;
-// 	if(TNFmult<=1){
-// 		ecArray[id].TNF=(ecArray[id].TNF+1)*TNFmult;
-// 	} else{
-// 		ecArray[id].TNF=ecArray[id].TNF+1+TNFmult-1;
-// 	}
-// 	if(IL1mult<=1){
-// 		ecArray[id].IL1=(ecArray[id].IL1+1)*IL1mult;
-// 	} else{
-// 		ecArray[id].IL1=ecArray[id].IL1+1+IL1mult-1;
-// 	}
-// 	pmn_age=pmn_pcd;
-// 	pmn_pcd=pmn_pcd-1+max(float(0),(ecArray[id].TNF+ecArray[id].IFNg+ecArray[id].GCSF-
-// 		ecArray[id].IL10)/100);
-// 	if(pmn_age<0){
-// 		x=xLoc;
-// 		y=yLoc;
-// 		pmnArray.erase(pmnArray.begin()+pmnID);
-// 		cellGrid[x][y]--;
-// 	}
-// }
 
 void pmn::pmn_burst(int pmnID){
 	int x,y,id;

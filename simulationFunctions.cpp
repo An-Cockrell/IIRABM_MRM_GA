@@ -29,6 +29,7 @@ extern vector<TH1_germ> TH1_germArray;
 extern vector<TH2_germ> TH2_germArray;
 
 extern float RM[numRules][numRuleParams];
+extern float injurySupplement[4];
 
 void wiggle(int* orientation, int* x, int* y);
 void getAhead(int orient, int x, int y, int *xl, int *xm, int *xr, int *yl, int *ym, int *yr);
@@ -792,6 +793,10 @@ void getRuleMatrix(float internalParam[], int numMatEls){
       RM[i][j]=internalParam[k];
       k++;
     }
+  }
+  for(i=0;i<4;i++){
+    injurySupplement[i]=internalParam[k];
+    k++;
   }
 // cout<<"RM[0][16]="<<RM[0][16]<<"\n";
 }
