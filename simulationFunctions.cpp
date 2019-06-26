@@ -730,7 +730,7 @@ float cytokineProductionRule(int ruleRow, int index, float tnfr, float il1r){
   }
 //  cout<<"Const="<<RM[ruleRow][16]<<"\n";
   tempSum+=RM[ruleRow][16];
-//  if(tempSum<0){tempSum=0;}
+  if(tempSum<0){tempSum=0;}
   return tempSum;
 }
 
@@ -758,7 +758,7 @@ float cytokineComboRule(int ruleRow, int index, float tnfr, float il1r){
     tempSum+=currentCyto[i]*RM[ruleRow][i];
   }
   tempSum+=RM[ruleRow][16];
-  if(tempSum<0){tempSum=0;}
+//  if(tempSum<0){tempSum=0;}
   return tempSum;
 }
 

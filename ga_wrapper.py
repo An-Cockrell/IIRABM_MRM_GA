@@ -20,7 +20,7 @@ _IIRABM = ctypes.CDLL('/home/chase/iirabm_fullga/IIRABM_RuleGA.so')
 # (oxyHeal,infectSpread,numRecurInj,numInfectRepeat,inj_number,seed,numMatrixElements,internalParameterization)
 _IIRABM.mainSimulation.argtypes = (ctypes.c_float, ctypes.c_int, ctypes.c_int,
                                    ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                                   ctypes.c_int, ctypes.POINTER(ctypes.c_float))
+                                   ctypes.c_int, ctypes.POINTER(ctypes.c_float), ctypes.c_int)
 _IIRABM.mainSimulation.restype = ndpointer(
     dtype=ctypes.c_float, shape=(20, 5280))
 
@@ -29,37 +29,65 @@ tournamentSize=2
 numMatrixElements=429
 mutationChance=0.005
 numIters=2
-numStochasticReplicates=10
+numStochasticReplicates=1
 array_type = ctypes.c_float*numMatrixElements
-selectedTimePoints=np.array([90,120,150,180,210,240,360,480,720,1200,1920,3600,5280])
+selectedTimePoints=np.array([89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 tnfMins=np.array([0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
 tnfMaxs=np.array([47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
 data=np.array([[0.075,2,2,1,27],[0.075,6,2,1,27],[0.1,4,2,1,32],[0.1,2,2,2,32],[0.1,6,2,1,32]])
 
+np.random.seed(10287)
+
+def printRuleMat(ip):
+    numRules=25
+    numParams=17
+    k=0
+    RM=np.zeros([numRules,numParams])
+    for i in range(numRules):
+        for j in range(numParams):
+            RM[i,j]=ip[k]
+            k=k+1
+    print("RM=",RM[1,:])
+    print("RM6=",RM[6,:])
+    print("RM14=",RM[14,:])
+    print("RM18=",RM[18,:])
+
 def getFitness(data,numReplicates,internalParam):
     fitnessCompare=np.zeros(13,dtype=np.float32)
     for i in range(data.shape[0]):
-        oxyHeal=data[i][0]
-        infectSpread=int(data[i][1])
-        numRecurInj=int(data[i][2])
-        numInfectRepeat=int(data[i][3])
-        injurySize=int(data[i][4])
+        oxyHeal=data[i,0]
+        infectSpread=int(data[i,1])
+        numRecurInj=int(data[i,2])
+        numInfectRepeat=int(data[i,3])
+        injurySize=int(data[i,4])
         for seed in range(numStochasticReplicates):
             result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
                                   numInfectRepeat, injurySize, seed,
                                   numMatrixElements,
-                                  array_type(*internalParam))
+                                  array_type(*internalParam),rank)
+            if(rank==9):
+                printRuleMat(internalParam)
+                print(result[2,[selectedTimePoints]])
+                np.savetxt("TestResult.csv",result,delimiter=',')
+                return
             tnfResult=np.zeros(13,dtype=np.float32)
             for j in range(13):
-                if(result[2][selectedTimePoints[j]-1]<0):
-                    result[2][selectedTimePoints[j]-1]=0
-                tnfResult[j]=result[2][selectedTimePoints[j]-1]
+                if(result[2,selectedTimePoints[j]-1]<0):
+                    result[2,selectedTimePoints[j]-1]=0
+                tnfResult[j]=result[2,selectedTimePoints[j]-1]
+            if(rank==9):
+                print(rank,tnfResult)
             fitnessCompare=np.vstack([fitnessCompare,tnfResult])
     np.delete(fitnessCompare,0,0)
     fitness=np.zeros(13,dtype=np.float32)
+#    print(rank,fitnessCompare.shape)
+#    print(fitnessCompare)
     for i in range(13):
-        fitMin=np.min(fitnessCompare[:][i])
-        fitMax=np.max(fitnessCompare[:][i])
+#        print(i)
+        temp=fitnessCompare[:,i]
+#        print(temp)
+        fitMin=np.min(fitnessCompare[:,i])
+        fitMax=np.max(fitnessCompare[:,i])
         fitness[i]=abs(fitMin-tnfMins[i])+abs(fitMax-tnfMaxs[i])
     fitsum=np.sum(fitness)
     return fitsum
@@ -83,13 +111,13 @@ def getInitialIP():
     for i in range(size):
         for j in range(nonZeroMatEls.shape[0]):
             temp=np.random.uniform(low=-5.0,high=5.0)
-            internalParamArray[i][nonZeroMatEls[j]]=temp
+            internalParamArray[i,nonZeroMatEls[j]]=temp
         for j in range(zeroMatEls.shape[0]):
             chance=np.random.uniform(low=0,high=100)
             if(chance<=nonZeroChance):
                 temp=np.random.uniform(low=-5.0,high=5.0)
-                internalParamArray[i][zeroMatEls[j]]=temp
-    internalParamArray[0][:]=np.load('baseParameterization.npy')
+                internalParamArray[i,zeroMatEls[j]]=temp
+    internalParamArray[0,:]=np.load('baseParameterization.npy')
     return internalParamArray
 
 def crossover(p1,p2):
@@ -117,10 +145,8 @@ def gaIter(recvbuf):
     indexes=np.asarray(indexes)
     fits=np.asarray(fits)
     np.random.shuffle(indexes)
-    # print(indexes.shape)
     nextGenIndexes=[]
     for i in range(0,size,2):
-        # print(i)
         temp1=fits[indexes[i]]
         temp2=fits[indexes[i+1]]
         if(temp1>temp2):
@@ -137,8 +163,8 @@ def gaIter(recvbuf):
         c1,c2=crossover(p1,p2)
         c1=mutate(c1)
         c2=mutate(c2)
-        newIParray[i][:]=c1
-        newIParray[i+1][:]=c2
+        newIParray[i,:]=c1
+        newIParray[i+1,:]=c2
     avgFit=np.mean(fits)
     return newIParray,avgFit
 
@@ -151,6 +177,7 @@ else:
 for i in range(numIters):
     myIP=comm.scatter(iparray,root=0)
     myFitness=getFitness(data,numStochasticReplicates,myIP)
+    print("FITNESS=",rank,myFitness)
 
     recvbuf=None
     sendbuf=myFitness

@@ -152,7 +152,7 @@ void pmn::pmn_burst(int pmnID){
 	ecArray[id].TNF=cytokineProductionRule(5,id,0,0);
 	ecArray[id].IL1=cytokineProductionRule(6,id,0,0);
 	pmn_age=pmn_pcd;
-	pmn_pcd=pmn_pcd-1+max(float(0),cytokineProductionRule(7,id,0,0)/100);
+	pmn_pcd=pmn_pcd-1+max(float(0),cytokineComboRule(7,id,0,0)/100);
 	if(pmn_age<0){
 		x=xLoc;
 		y=yLoc;
@@ -222,7 +222,7 @@ void mono::mono_function(int index){
 	ecArray[id].sTNFr=cytokineProductionRule(9,id,TNFr,IL_1r);
 	ecArray[id].sIL1r=cytokineProductionRule(10,id,TNFr,IL_1r);
 
-	activation=cytokineProductionRule(11,id,TNFr,IL_1r);
+	activation=cytokineComboRule(11,id,TNFr,IL_1r);
 
 	if(activation>0){
 		ecArray[id].GCSF=cytokineProductionRule(12,id,TNFr,IL_1r);
