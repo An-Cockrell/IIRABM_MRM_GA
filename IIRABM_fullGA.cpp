@@ -87,7 +87,6 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 		numABX=0;
 		injure_infectionFRD(inj_number);
 		for(i=0;i<numTimeSteps;i++){
-
 			step++;
 			istep++;
 			if(step==injuryStep){step=1;}
@@ -97,7 +96,7 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 			simulationStep(i,infectSpread,numInfectRepeat,oxyHeal,numRecurInj,numABX);
 			updateSystemOxy(istep);
 			updateTrajectoryOutput(allSignals,i);
-			//			cout<<"i="<<i<<" "<<oxyDeficit<<"\n";
+//						cout<<"i="<<i<<" "<<oxyDeficit<<"\n";
 			if(oxyDeficit>8161||(oxyDeficit<5&&i>0)){
 				for(iend=i+1;iend<numTimeSteps;iend++){
 					for(jend=0;jend<20;jend++){
@@ -108,7 +107,7 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 			}
 			if(oxyDeficit>=8161){
 					break;
-//					return 1;
+					// return 1;
 			}
 
 		}
@@ -126,8 +125,8 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 				k++;
 			}
 		}
-		return allSignalsReturn;
 
+		return allSignalsReturn;
 }
 
 void simulationStep(int step,int infectSpread,int numInfectRepeat,float oxyHeal,int numRecurInj, int numABX){
