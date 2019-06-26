@@ -23,6 +23,7 @@ _IIRABM.mainSimulation.argtypes = (ctypes.c_float, ctypes.c_int, ctypes.c_int,
 #     dtype=ctypes.c_float, shape=(20, 100))
 
 internalParameterization=np.load('baseParameterization.npy')
+numMatrixElements = internalParameterization.shape[0]
 # injurySize = np.array([25,27,30,32,35])
 # oxyHeal = np.array([0.05,0.075,0.1,0.0125,0.15])
 # infectSpread = np.array([2, 4, 6])
