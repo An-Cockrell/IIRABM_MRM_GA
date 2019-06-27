@@ -12,6 +12,7 @@ void simulationStep(int step,int infectSpread,int numInfectRepeat,float oxyHeal,
 void cellStep(int infectSpread,int numInfectRepeat,float oxyHeal,int numRecurInj);
 void recurrentInjury(int step,int numRecurInj);
 void giveABX(int step, int *numABX);
+int cytokineLevelPlausabilityCheck(float allSignals[][numTimeSteps], int q);
 
 extern void injure_infectionFRD(int inj_number);
 extern void updateSystemOxy(int step);
@@ -63,13 +64,13 @@ extern const int cellCapacity,xDim,yDim,injuryStep,parameterInput,numTimeSteps;
 extern const float antibioticMultiplier;
 
 extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
-	int numRecurInj, int numInfectRepeat, int inj_number, int seed, int numMatrixElements, float* internalParameterization){
+	int numRecurInj, int numInfectRepeat, int inj_number, int seed, int numMatrixElements, float* internalParameterization, int pyrank){
 
 // extern "C" int mainSimulation(float oxyHeal, int infectSpread,
 // 	int numRecurInj, int numInfectRepeat, int inj_number, int seed, int numMatrixElements, float* internalParameterization){
 
 		int i,step,iend,jend,antibiotic1,antibiotic2,istep,k,j;
-		int numABX;
+		int numABX,clpc_flag=0;
 		generator.seed(seed);
 //		cout<<"oxyHeal="<<oxyHeal<<"\n";
 //		return allSignalsReturn;
@@ -96,9 +97,21 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 			simulationStep(i,infectSpread,numInfectRepeat,oxyHeal,numRecurInj,numABX);
 			updateSystemOxy(istep);
 			updateTrajectoryOutput(allSignals,i);
+			clpc_flag=cytokineLevelPlausabilityCheck(allSignals,i);
+			// if(pyrank==9){
+			// 	cout<<i<<" "<<total_IL8<<"\n";
+			// }
 //						cout<<"i="<<i<<" "<<oxyDeficit<<"\n";
 			if(oxyDeficit>8161||(oxyDeficit<5&&i>0)){
-				for(iend=i+1;iend<numTimeSteps;iend++){
+				for(iend=i;iend<numTimeSteps;iend++){
+					for(jend=0;jend<20;jend++){
+							allSignals[jend][iend]=-1.0;
+					}
+				}
+				break;
+			}
+			if(clpc_flag==1){
+				for(iend=i;iend<numTimeSteps;iend++){
 					for(jend=0;jend<20;jend++){
 							allSignals[jend][iend]=-1.0;
 					}
@@ -250,4 +263,15 @@ void giveABX(int step, int *numABX){
     applyAntibiotics();
     *numABX++;
   }
+}
+
+int cytokineLevelPlausabilityCheck(float allSignals[][numTimeSteps], int q){
+	int i,flag=0;
+	for(i=0;i<20;i++){
+		if(allSignals[i][q]>100000.0){
+			flag=1;
+			break;
+		}
+	}
+	return flag;
 }
