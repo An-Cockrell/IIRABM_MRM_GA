@@ -52,10 +52,12 @@ def printRuleMat(ip):
         for j in range(numParams):
             RM[i,j]=ip[k]
             k=k+1
-    # print("RM=",RM[1,:])
-    # print("RM6=",RM[6,:])
-    # print("RM14=",RM[14,:])
-    # print("RM18=",RM[18,:])
+
+def jostle(ip):
+    for i in range(numMatrixElements):
+        if(ip[i]<0):
+            ip[i]=ip[i]+np.uniform.random(low=0.0,high=1.0)
+    return ip
 
 def getFitness(data,numReplicates,internalParam):
     fitnessCompare=np.zeros(13,dtype=np.float32)
@@ -156,8 +158,12 @@ def gaIter(recvbuf):
         temp2=fits[indexes[i+1]]
         if(temp1<temp2):
             winner=indexes[i]
+            # if(fits[indexes[i]]>906.3 and fits[indexes[i]]<906.5):
+            #     iparray[indexes[i]]=jostle(iparray[indexes[i]])
         else:
             winner=indexes[i+1]
+            # if(fits[indexes[i+1]]>906.3 and fits[indexes[i+1]]<906.5):
+            #     iparray[indexes[i+1]]=jostle(iparray[indexes[i+1]])
         nextGenIndexes.append(winner)
     nextGenIndexes=np.asarray(nextGenIndexes)
     np.random.shuffle(nextGenIndexes)

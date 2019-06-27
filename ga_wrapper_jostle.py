@@ -200,10 +200,10 @@ for i in range(numIters):
 #        print("RBUF=",recvbuf)
         iparray,avgFit=gaIter(recvbuf)
         averages.append(avgFit)
-        iname=str('InternalParameterization_Gen%s.csv'%i)
+        iname=str('InternalParameterization_J_Gen%s.csv'%i)
         np.savetxt(iname,iparray,delimiter=',')
         print("Average Fitness=",avgFit)
 
 if(rank==0):
     averages=np.asarray(averages)
-    np.savetxt('FinalAverages.csv',averages,delimiter=',')
+    np.savetxt('FinalAverages_J.csv',averages,delimiter=',')
