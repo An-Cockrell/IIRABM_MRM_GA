@@ -15,6 +15,7 @@ size = comm.Get_size()
 
 # Ctypes initialization
 _IIRABM = ctypes.CDLL('/home/chase/iirabm_fullga/IIRABM_RuleGA.so')
+#_IIRABM = ctypes.CDLL('/users/r/c/rcockrel/iirabm_fullga/IIRABM_RuleGA.so')
 #_IIRABM = ctypes.CDLL('/global/cscratch1/sd/cockrell/IIRABM_RuleGA.so')
 
 # (oxyHeal,infectSpread,numRecurInj,numInfectRepeat,inj_number,seed,numMatrixElements,internalParameterization)
@@ -28,13 +29,17 @@ nonZeroChance=5
 tournamentSize=2
 numMatrixElements=429
 mutationChance=0.005
-numIters=2
-numStochasticReplicates=1
+numIters=100
+numStochasticReplicates=10
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 tnfMins=np.array([0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
 tnfMaxs=np.array([47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
 data=np.array([[0.075,2,2,1,27],[0.075,6,2,1,27],[0.1,4,2,1,32],[0.1,2,2,2,32],[0.1,6,2,1,32]])
+
+mutlow=-1.5
+muthigh=2
+
 
 np.random.seed(10287)
 
@@ -65,18 +70,18 @@ def getFitness(data,numReplicates,internalParam):
                                   numInfectRepeat, injurySize, seed,
                                   numMatrixElements,
                                   array_type(*internalParam),rank)
-            if(rank==9):
-                printRuleMat(internalParam)
-                print(result[2,[selectedTimePoints]])
-                np.savetxt("TestResult.csv",result,delimiter=',')
-                return
+            # if(rank==9):
+            #     printRuleMat(internalParam)
+            #     print(result[2,[selectedTimePoints]])
+            #     np.savetxt("TestResult.csv",result,delimiter=',')
+            #     return
             tnfResult=np.zeros(13,dtype=np.float32)
             for j in range(13):
                 if(result[2,selectedTimePoints[j]-1]<0):
                     result[2,selectedTimePoints[j]-1]=0
                 tnfResult[j]=result[2,selectedTimePoints[j]-1]
-            if(rank==9):
-                print(rank,tnfResult)
+            # if(rank==9):
+            #     print(rank,tnfResult)
             fitnessCompare=np.vstack([fitnessCompare,tnfResult])
     np.delete(fitnessCompare,0,0)
     fitness=np.zeros(13,dtype=np.float32)
@@ -177,15 +182,16 @@ else:
 for i in range(numIters):
     myIP=comm.scatter(iparray,root=0)
     myFitness=getFitness(data,numStochasticReplicates,myIP)
-    print("FITNESS=",rank,myFitness)
+    print("FITNESS=",i,rank,myFitness)
 
     recvbuf=None
     sendbuf=myFitness
     if rank==0:
-        recvbuf=np.empty([size], dtype=np.int64)
+        recvbuf=np.empty([size], dtype=np.float32)
     comm.Gather(sendbuf, recvbuf, root=0)
 
     if(rank==0):
+#        print("RBUF=",recvbuf)
         iparray,avgFit=gaIter(recvbuf)
         averages.append(avgFit)
         iname=str('InternalParameterization_Gen%s.csv'%i)
