@@ -158,12 +158,12 @@ def gaIter(recvbuf):
         temp2=fits[indexes[i+1]]
         if(temp1<temp2):
             winner=indexes[i]
-            # if(fits[indexes[i]]>906.3 and fits[indexes[i]]<906.5):
-            #     iparray[indexes[i]]=jostle(iparray[indexes[i]])
+            if(fits[indexes[i]]>906.3 and fits[indexes[i]]<906.5):
+                iparray[indexes[i]]=jostle(iparray[indexes[i]])
         else:
             winner=indexes[i+1]
-            # if(fits[indexes[i+1]]>906.3 and fits[indexes[i+1]]<906.5):
-            #     iparray[indexes[i+1]]=jostle(iparray[indexes[i+1]])
+            if(fits[indexes[i+1]]>906.3 and fits[indexes[i+1]]<906.5):
+                iparray[indexes[i+1]]=jostle(iparray[indexes[i+1]])
         nextGenIndexes.append(winner)
     nextGenIndexes=np.asarray(nextGenIndexes)
     np.random.shuffle(nextGenIndexes)
@@ -200,10 +200,10 @@ for i in range(numIters):
 #        print("RBUF=",recvbuf)
         iparray,avgFit=gaIter(recvbuf)
         averages.append(avgFit)
-        iname=str('InternalParameterization_Gen%s.csv'%i)
+        iname=str('InternalParameterization_J_Gen%s.csv'%i)
         np.savetxt(iname,iparray,delimiter=',')
         print("Average Fitness=",avgFit)
 
 if(rank==0):
     averages=np.asarray(averages)
-    np.savetxt('FinalAverages.csv',averages,delimiter=',')
+    np.savetxt('FinalAverages_J.csv',averages,delimiter=',')
