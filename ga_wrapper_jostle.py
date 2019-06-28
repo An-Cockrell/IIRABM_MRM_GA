@@ -56,7 +56,7 @@ def printRuleMat(ip):
 def jostle(ip):
     for i in range(numMatrixElements):
         if(ip[i]<0):
-            ip[i]=ip[i]+np.uniform.random(low=0.0,high=1.0)
+            ip[i]=ip[i]+np.random.uniform(low=0.0,high=1.0)
     return ip
 
 def getFitness(data,numReplicates,internalParam):
@@ -80,7 +80,7 @@ def getFitness(data,numReplicates,internalParam):
             tnfResult=np.zeros(13,dtype=np.float32)
             for j in range(13):
                 if(result[2,selectedTimePoints[j]-1]<0):
-                    result[2,selectedTimePoints[j]-1]=0
+                    result[2,selectedTimePoints[j]-1]=-100
                 tnfResult[j]=result[2,selectedTimePoints[j]-1]
             # if(rank==9):
             #     print(rank,tnfResult)
@@ -95,7 +95,11 @@ def getFitness(data,numReplicates,internalParam):
 #        print(temp)
         fitMin=np.min(fitnessCompare[:,i])
         fitMax=np.max(fitnessCompare[:,i])
-        fitness[i]=abs(fitMin-tnfMins[i])+abs(fitMax-tnfMaxs[i])
+        term1=abs(fitMin-tnfMins[i])
+        term2=abs(fitMax-tnfMaxs[i])
+        if(tnfMaxs[i]==0):
+            term2=1000
+        fitness[i]=term1+term2
     fitsum=np.sum(fitness)
     return fitsum
 
