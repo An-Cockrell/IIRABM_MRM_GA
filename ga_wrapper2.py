@@ -35,10 +35,15 @@ array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 tnfMins=np.array([0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
 tnfMaxs=np.array([47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
+
+tnfMaxs=tnfMaxs/np.max(tnfMaxs);
+tnfMins=tnfMins/np.max(tnfMaxs);
+
 data=np.array([[0.075,2,2,1,27],[0.075,6,2,1,27],[0.1,4,2,1,32],[0.1,2,2,2,32],[0.1,6,2,1,32]])
 
 geneLow=-1.5
 geneHigh=2
+critfit=130000
 
 
 np.random.seed(10287)
@@ -53,12 +58,6 @@ def printRuleMat(ip):
             RM[i,j]=ip[k]
             k=k+1
 
-def jostle(ip):
-    for i in range(numMatrixElements):
-        if(ip[i]<0):
-            ip[i]=ip[i]+np.random.uniform(low=0.0,high=1.0)
-    return ip
-
 def getFitness(data,numReplicates,internalParam):
     fitnessCompare=np.zeros(13,dtype=np.float32)
     for i in range(data.shape[0]):
@@ -72,33 +71,33 @@ def getFitness(data,numReplicates,internalParam):
                                   numInfectRepeat, injurySize, seed,
                                   numMatrixElements,
                                   array_type(*internalParam),rank)
-            # if(rank==9):
-            #     printRuleMat(internalParam)
-            #     print(result[2,[selectedTimePoints]])
-            #     np.savetxt("TestResult.csv",result,delimiter=',')
-            #     return
             tnfResult=np.zeros(13,dtype=np.float32)
             for j in range(13):
                 if(result[2,selectedTimePoints[j]-1]<0):
                     result[2,selectedTimePoints[j]-1]=0
                 tnfResult[j]=result[2,selectedTimePoints[j]-1]
-            # if(rank==9):
-            #     print(rank,tnfResult)
             fitnessCompare=np.vstack([fitnessCompare,tnfResult])
     np.delete(fitnessCompare,0,0)
+
+    normalizer=0;
+    for i in range(fitnessCompare.shape[0]):
+        for j in range(13):
+            if(fitnessCompare[i,j]>normalizer):
+                normalizer=fitnessCompare[i,j]
+    if(normalizer>0):
+        fitnessCompare=fitnessCompare/normalizer
+
+#    print("FC=",fitnessCompare)
+
     fitness=np.zeros(13,dtype=np.float32)
-#    print(rank,fitnessCompare.shape)
-#    print(fitnessCompare)
     for i in range(13):
-#        print(i)
         temp=fitnessCompare[:,i]
-#        print(temp)
         fitMin=np.min(fitnessCompare[:,i])
         fitMax=np.max(fitnessCompare[:,i])
         term1=abs(fitMin-tnfMins[i])
         term2=abs(fitMax-tnfMaxs[i])
-        if(tnfMaxs[i]==0):
-            term2=1000
+        if(fitMax==0):
+            term2=100
         fitness[i]=term1+term2
     fitsum=np.sum(fitness)
     return fitsum
@@ -147,6 +146,60 @@ def mutate(ip):
         ip[tempIndex]=np.random.uniform(low=geneLow,high=geneHigh)
     return ip
 
+def getNextParents(fits,indexes):
+    breedables=[]
+    bfits=[]
+    for i in range(indexes.shape[0]):
+        if(fits[i]<critfit):
+            breedables.append(i)
+            bfits.append(fits[i])
+    breedables=np.asarray(breedables)
+    bfits=np.asarray(bfits)
+    sortedFitIndexes=np.argsort(bfits)
+    addfits=[]
+    # print("BFITS=",bfits.shape,bfits)
+    if(bfits.shape[0]<size):
+        diff=size-bfits.shape[0]
+        k=0;
+        for i in range(diff):
+            addfits.append(sortedFitIndexes[k])
+            k=k+1;
+            if(k>sortedFitIndexes.shape[0]-1):
+                k=0
+        addfits=np.asarray(addfits)
+        breedables=np.hstack([breedables,addfits])
+    # print("Breedables=",breedables)
+    np.random.shuffle(breedables)
+    # print("BSIZE=",breedables.shape)
+    breeders=[]
+    for i in range(0,size,2):
+        temp1=fits[breedables[i]]
+        temp2=fits[breedables[i]]
+        if(temp1<temp2):
+            winner=breedables[i]
+        else:
+            winner=breedables[i+1]
+        breeders.append(winner)
+    breeders=np.asarray(breeders)
+    np.random.shuffle(breeders)
+
+    return breeders,bfits
+
+def getNextGeneration(breeders):
+    newIParray=np.zeros([size,numMatrixElements],dtype=np.float32)
+    for i in range(0,size,2):
+        temp1=np.random.randint(low=0,high=breeders.shape[0])
+        temp2=np.random.randint(low=0,high=breeders.shape[0])
+        p1=breeders[temp1]
+        p2=breeders[temp2]
+        c1,c2=crossover(p1,p2)
+        c1=mutate(c1)
+        c2=mutate(c2)
+        newIParray[i,:]=c1
+        newIParray[i+1,:]=c2
+    return newIParray
+
+
 def gaIter(recvbuf):
     fits=[]
     indexes=[]
@@ -155,33 +208,11 @@ def gaIter(recvbuf):
         indexes.append(i)
     indexes=np.asarray(indexes)
     fits=np.asarray(fits)
-    np.random.shuffle(indexes)
-    nextGenIndexes=[]
-    for i in range(0,size,2):
-        temp1=fits[indexes[i]]
-        temp2=fits[indexes[i+1]]
-        if(temp1<temp2):
-            winner=indexes[i]
-            if(fits[indexes[i]]>906.3 and fits[indexes[i]]<906.5):
-                iparray[indexes[i]]=jostle(iparray[indexes[i]])
-        else:
-            winner=indexes[i+1]
-            if(fits[indexes[i+1]]>906.3 and fits[indexes[i+1]]<906.5):
-                iparray[indexes[i+1]]=jostle(iparray[indexes[i+1]])
-        nextGenIndexes.append(winner)
-    nextGenIndexes=np.asarray(nextGenIndexes)
-    np.random.shuffle(nextGenIndexes)
-    newIParray=np.zeros([size,numMatrixElements],dtype=np.float32)
-    for i in range(0,nextGenIndexes.shape[0],2):
-        p1=nextGenIndexes[i]
-        p2=nextGenIndexes[i+1]
-        c1,c2=crossover(p1,p2)
-        c1=mutate(c1)
-        c2=mutate(c2)
-        newIParray[i,:]=c1
-        newIParray[i+1,:]=c2
-    avgFit=np.mean(fits)
+    breeders,bfits=getNextParents(fits,indexes)
+    newIParray=getNextGeneration(breeders)
+    avgFit=np.mean(bfits)
     return newIParray,avgFit
+
 
 if(rank==0):
     iparray=getInitialIP();
@@ -192,7 +223,7 @@ else:
 for i in range(numIters):
     myIP=comm.scatter(iparray,root=0)
     myFitness=getFitness(data,numStochasticReplicates,myIP)
-    print("FITNESS=",i,rank,myFitness)
+    print("FITNESS_%s="%i,rank,myFitness)
 
     recvbuf=None
     sendbuf=myFitness
@@ -204,10 +235,10 @@ for i in range(numIters):
 #        print("RBUF=",recvbuf)
         iparray,avgFit=gaIter(recvbuf)
         averages.append(avgFit)
-        iname=str('InternalParameterization_J_Gen%s.csv'%i)
+        iname=str('InternalParameterization_Gen%s.csv'%i)
         np.savetxt(iname,iparray,delimiter=',')
         print("Average Fitness=",avgFit)
 
 if(rank==0):
     averages=np.asarray(averages)
-    np.savetxt('FinalAverages_J.csv',averages,delimiter=',')
+    np.savetxt('FinalAverages.csv',averages,delimiter=',')
