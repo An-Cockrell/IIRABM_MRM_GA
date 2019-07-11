@@ -29,23 +29,24 @@ nonZeroChance=5
 tournamentSize=2
 numMatrixElements=429
 mutationChance=0.010
-numIters=100
-numStochasticReplicates=1
+numIters=500
+numStochasticReplicates=10
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 tnfMins=np.array([0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
 tnfMaxs=np.array([47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
-
-tnfMaxs=tnfMaxs/np.max(tnfMaxs);
-tnfMins=tnfMins/np.max(tnfMaxs);
+tMax=np.max(tnfMaxs)
+tnfMaxs=tnfMaxs/np.max(tMax);
+tnfMins=tnfMins/np.max(tMax);
 
 data=np.array([[0.075,2,2,1,27],[0.075,6,2,1,27],[0.1,4,2,1,32],[0.1,2,2,2,32],[0.1,6,2,1,32]])
 
 geneLow=-1.5
 geneHigh=2
-critfit=130000
+critfit=1370
 
 eliteFraction=0.1
+numElites=int(eliteFraction*size)
 
 np.random.seed(10287)
 
@@ -86,10 +87,11 @@ def getFitness(data,numReplicates,internalParam):
             if(fitnessCompare[i,j]>normalizer):
                 normalizer=fitnessCompare[i,j]
     if(normalizer>0):
-        fitnessCompare=fitnessCompare/normalizer
+        for i in range(fitnessCompare.shape[0]):
+            for j in range(13):
+                    fitnessCompare[i,j]=fitnessCompare[i,j]/normalizer
 
-#    print("FC=",fitnessCompare)
-
+#    print(rank,fitnessCompare)
     fitness=np.zeros(13,dtype=np.float32)
     for i in range(13):
         temp=fitnessCompare[:,i]
@@ -101,6 +103,7 @@ def getFitness(data,numReplicates,internalParam):
             term2=100
         fitness[i]=term1+term2
     fitsum=np.sum(fitness)
+#    print(fitMin,fitMax,fitness)
     return fitsum
 
 def getInitialIP():
@@ -186,7 +189,6 @@ def getNextParents(fits,iparray):
         breeders.append(breedables[winner,:])
         breederFits.append(bfits[winner])
     breeders=np.asarray(breeders)
-#    print("Breeders Shape=",breeders.shape)
     breederFits=np.asarray(breederFits)
 
     return breeders,breederFits
@@ -195,33 +197,29 @@ def getNextGeneration(breeders,breederFits):
     newIParray=np.zeros([size,numMatrixElements],dtype=np.float32)
     parentArray=np.zeros([size,numMatrixElements],dtype=np.float32)
     parentFitArray=np.zeros(size,dtype=np.float32)
+    print(breederFits)
     for i in range(0,size,2):
         if(breeders.shape[0]>2):
             temp1=np.random.randint(low=0,high=breeders.shape[0])
             p1=breeders[temp1,:]
-            breeders=np.delete(breeders,temp1,axis=0)
-            print("bs1=",breeders.shape,breederFits.shape)
-#            parentArray[i,:]=p1
+#            breeders=np.delete(breeders,temp1,axis=0)
+#            print("bs1=",breeders.shape,i)
             parentFitArray[i]=breederFits[temp1]
-            breederFits=np.delete(breederFits,temp1)
+#            breederFits=np.delete(breederFits,temp1)
             temp2=np.random.randint(low=0,high=breeders.shape[0])
             p2=breeders[temp2,:]
-            breeders=np.delete(breeders,temp2,axis=0)
-            print("bs2=",breeders.shape,breederFits.shape)
+#            breeders=np.delete(breeders,temp2,axis=0)
+#            print("bs2=",breeders.shape,breederFits.shape)
             parentFitArray[i+1]=breederFits[temp2]
-#            parentArray[i+1,:]=p2
-            breederFits=np.delete(breederFits,temp2)
-#            print("TEMPS=",temp1,temp2)
-            print("Shape=",breeders.shape)
-        else:
-            p1=breeders[0,:]
-            p2=breeders[1,:]
-#            parentArray[i,:]=p1
-#            parentArray[i+1,:]=p2
-            parentFitArray[i]=breederFits[0]
-            parentFitArray[i+1]=breederFits[1]
-            print("Else Statement Completed",i)
-
+#            breederFits=np.delete(breederFits,temp2)
+#            print("Shape=",breeders.shape)
+        # elif(breeders.shape[0]<=2):
+        #     print("Entering Else",breeders.shape[0])
+        #     p1=breeders[0,:]
+        #     p2=breeders[1,:]
+        #     parentFitArray[i]=breederFits[0]
+        #     parentFitArray[i+1]=breederFits[1]
+        #     print("Else Statement Completed",i)
         c1,c2=crossover(p1,p2)
         c1=mutate(c1)
         c2=mutate(c2)
@@ -232,20 +230,24 @@ def getNextGeneration(breeders,breederFits):
     return newIParray,parentArray,parentFitArray
 
 def compareGenerations(fitArray,iparray,parentArray,parentFitArray):  #parentArrayNotDefined - fix this
-    for i in range(size):
-        if(parentFitArray[i]<fitArray[i]):
-            fitArray[i]=parentFitArray[i]
-            iparray[i,:]=parentArray[i,:]
+    sortFits=np.argsort(fitArray)
+    sortParents=np.argsort(parentFitArray)
+    for i in range(numElites):
+        compIndex=sortFits.shape[0]-(i+1)
+        if(parentFitArray[sortParents[i]]<fitArray[compIndex]):
+            fitArray[compIndex]=parentFitArray[sortParents[i]]
+            iparray[compIndex,:]=parentArray[sortParents[i],:]
+    return iparray,fitArray
+
 
 def gaIter(recvbuf,iparray,parentArray,parentFitArray,genNumber):
     fits=[]
     for i in range(size):
         fits.append(recvbuf[i])
     fits=np.asarray(fits)
-    if(genNumber>0):
-        compareGenerations(fits,iparray,parentArray,parentFitArray)
+#    if(genNumber>0):
+    iparray,fits=compareGenerations(fits,iparray,parentArray,parentFitArray)
     breeders,breederFits=getNextParents(fits,iparray)
-    print("Breeders Shape 2=",breeders.shape)
     newIParray,parents,parentFits=getNextGeneration(breeders,breederFits)
     avgFit=np.mean(breederFits)
     return newIParray,avgFit,parents,parentFits
@@ -262,6 +264,7 @@ parentFitArray=np.zeros(size)
 parentFitArray=parentFitArray+1000000
 
 for i in range(numIters):
+    mutationChance=0.010+0.01*i
     myIP=comm.scatter(iparray,root=0)
     myFitness=getFitness(data,numStochasticReplicates,myIP)
     print("FITNESS_%s="%i,rank,myFitness)
@@ -272,7 +275,7 @@ for i in range(numIters):
     comm.Gather(sendbuf, recvbuf, root=0)
 
     if(rank==0):
-        newiparray,avgFit,parents,parentFits=gaIter(recvbuf,iparray,parentArray,parentFitArray,i)
+        iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i)
         averages.append(avgFit)
         iname=str('InternalParameterization_Gen%s.csv'%i)
         np.savetxt(iname,iparray,delimiter=',')
