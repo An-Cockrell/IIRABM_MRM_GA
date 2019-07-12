@@ -30,14 +30,40 @@ tournamentSize=2
 numMatrixElements=429
 mutationChance=0.010
 numIters=500
-numStochasticReplicates=10
+numStochasticReplicates=1
 array_type = ctypes.c_float*numMatrixElements
-selectedTimePoints=np.array([89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
-tnfMins=np.array([0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
-tnfMaxs=np.array([47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
+selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
+numDataPoints=selectedTimePoints.shape[0]
+
+tnfMins=np.array([22.34,20.74,0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
+tnfMaxs=np.array([135.64,79,47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
 tMax=np.max(tnfMaxs)
-tnfMaxs=tnfMaxs/np.max(tMax);
-tnfMins=tnfMins/np.max(tMax);
+tnfMaxs=tnfMaxs/np.max(tMax)
+tnfMins=tnfMins/np.max(tMax)
+
+il4Mins=np.array([14,12,0,1,0,0,0,0,0,0,0,0,2,13,0])
+il4Maxs=np.array([213.53,93.23,58.15,52.13,45.11,36.09,50.13,49.12,49.12,59.15,99.25,151.38,109.27,54.14,69.17])
+il4Max=np.max(il4Maxs)
+il4Mins=il4Mins/il4Max
+il4Maxs=il4Maxs/il4Max
+
+gcsfMins=np.array([47.75,15.92,0,0,0,0,0,19.89,47.75,23.87,3.98,0,0,3.98,0])
+gcsfMaxs=np.array([3846,11071,1102,823,831,107,139,159,640,405,508,1090,342,413,441])
+gcsfMax=np.max(gcsfMaxs)
+gcsfMins=gcsfMins/gcsfMax
+gcsfMaxs=gcsfMaxs/gcsfMax
+
+il10Mins=np.array([34.48,11.94,0,2.65,7.96,3.98,23.87,0,11.94,1.33,2.65,1.33,0,1.33,3.98])
+il10Maxs=np.array([228,199,454,198,228,243,284,118,842,122,184,3842,49,15,14])
+il10Max=np.max(il10Maxs)
+il10Mins=il10Mins/il10Max
+il10Maxs=il10Maxs/il10Max
+
+ifngMins=np.array([52,0,4.76,0,4.76,0,9.52,0,4.76,9.52,0,4.76,9.52,0,4.76])
+ifngMaxs=np.array([11071,2857,974,850,902,759,1136,902,1017,1218,1700,2142,2142,754,587])
+ifngMax=np.max(ifngMaxs)
+ifngMins=ifngMins/ifngMax
+ifngMaxs=ifngMaxs/ifngMax
 
 data=np.array([[0.075,2,2,1,27],[0.075,6,2,1,27],[0.1,4,2,1,32],[0.1,2,2,2,32],[0.1,6,2,1,32]])
 
@@ -60,50 +86,82 @@ def printRuleMat(ip):
             RM[i,j]=ip[k]
             k=k+1
 
+def getFitnessResult(result,index):
+    selectResult=np.zeros(numDataPoints,dtype=np.float32)
+    for j in range(numDataPoints):
+        if(result[index,selectedTimePoints[j]-1]<0):
+            result[index,selectedTimePoints[j]-1]=0
+        selectResult[j]=result[index,selectedTimePoints[j]-1]
+    return selectResult
+
+def normalizeResult(input):
+    normalizer=0;
+    for i in range(input.shape[0]):
+        for j in range(numDataPoints):
+            if(input[i,j]>normalizer):
+                normalizer=input[i,j]
+    if(normalizer>0):
+        input=input/normalizer
+    return input
+
+def compareFitness(input,mins,maxs):
+    fitness=np.zeros(numDataPoints,dtype=np.float32)
+    for i in range(numDataPoints):
+        temp=input[:,i]
+        fitMin=np.min(input[:,i])
+        fitMax=np.max(input[:,i])
+        term1=abs(fitMin-mins[i])
+        term2=abs(fitMax-maxs[i])
+        if(fitMax==0):
+            term2=100
+        fitness[i]=term1+term2
+    fitsum=np.sum(fitness)
+    return fitsum
+
+
 def getFitness(data,numReplicates,internalParam):
-    fitnessCompare=np.zeros(13,dtype=np.float32)
+    fitnessCompare=np.zeros(numDataPoints,dtype=np.float32)
     for i in range(data.shape[0]):
         oxyHeal=data[i,0]
         infectSpread=int(data[i,1])
         numRecurInj=int(data[i,2])
         numInfectRepeat=int(data[i,3])
         injurySize=int(data[i,4])
+        tnfResult=np.zeros(numDataPoints,dtype=np.float32)
+        il4Result=np.zeros(numDataPoints,dtype=np.float32)
+        il10Result=np.zeros(numDataPoints,dtype=np.float32)
+        gcsfResult=np.zeros(numDataPoints,dtype=np.float32)
+        ifngResult=np.zeros(numDataPoints,dtype=np.float32)
         for seed in range(numStochasticReplicates):
             result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
                                   numInfectRepeat, injurySize, seed,
                                   numMatrixElements,
                                   array_type(*internalParam),rank)
-            tnfResult=np.zeros(13,dtype=np.float32)
-            for j in range(13):
-                if(result[2,selectedTimePoints[j]-1]<0):
-                    result[2,selectedTimePoints[j]-1]=0
-                tnfResult[j]=result[2,selectedTimePoints[j]-1]
-            fitnessCompare=np.vstack([fitnessCompare,tnfResult])
-    np.delete(fitnessCompare,0,0)
+            tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
+            il4Result=np.vstack([tnfResult,getFitnessResult(result,15)])
+            il10Result=np.vstack([tnfResult,getFitnessResult(result,4)])
+            gcsfResult=np.vstack([tnfResult,getFitnessResult(result,5)])
+            ifngResult=np.vstack([tnfResult,getFitnessResult(result,12)])
 
-    normalizer=0;
-    for i in range(fitnessCompare.shape[0]):
-        for j in range(13):
-            if(fitnessCompare[i,j]>normalizer):
-                normalizer=fitnessCompare[i,j]
-    if(normalizer>0):
-        for i in range(fitnessCompare.shape[0]):
-            for j in range(13):
-                    fitnessCompare[i,j]=fitnessCompare[i,j]/normalizer
+    np.delete(tnfResult,0,0)
+    np.delete(il4Result,0,0)
+    np.delete(il10Result,0,0)
+    np.delete(gcsfResult,0,0)
+    np.delete(ifngResult,0,0)
 
-#    print(rank,fitnessCompare)
-    fitness=np.zeros(13,dtype=np.float32)
-    for i in range(13):
-        temp=fitnessCompare[:,i]
-        fitMin=np.min(fitnessCompare[:,i])
-        fitMax=np.max(fitnessCompare[:,i])
-        term1=abs(fitMin-tnfMins[i])
-        term2=abs(fitMax-tnfMaxs[i])
-        if(fitMax==0):
-            term2=100
-        fitness[i]=term1+term2
-    fitsum=np.sum(fitness)
-#    print(fitMin,fitMax,fitness)
+    tnfResult=normalizeResult(tnfResult)
+    il4Result=normalizeResult(il4Result)
+    il10Result=normalizeResult(il10Result)
+    gcsfResult=normalizeResult(gcsfResult)
+    ifngResult=normalizeResult(ifngResult)
+
+    fit1=compareFitness(tnfResult,tnfMins,tnfMaxs)
+    fit2=compareFitness(il4Result,il4Mins,il4Maxs)
+    fit3=compareFitness(il10Result,il10Mins,il10Maxs)
+    fit4=compareFitness(gcsfResult,gcsfMins,gcsfMaxs)
+    fit5=compareFitness(ifngResult,ifngMins,ifngMaxs)
+    fitsum=fit1+fit2+fit3+fit4+fit5
+
     return fitsum
 
 def getInitialIP():
