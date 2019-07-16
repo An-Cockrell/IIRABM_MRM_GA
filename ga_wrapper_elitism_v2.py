@@ -7,6 +7,7 @@ import numpy as np
 from mpi4py import MPI
 from numpy.ctypeslib import ndpointer
 from numpy import genfromtxt
+import sys
 
 # MPI Initialization
 comm = MPI.COMM_WORLD
@@ -27,10 +28,13 @@ _IIRABM.mainSimulation.restype = ndpointer(
 
 nonZeroChance=5
 tournamentSize=2
-numMatrixElements=429
-mutationChance=0.010
+numBaseMatrixElements=429
+numMatrixElements=432
+baseGeneMutation=0.01
+baseParamMutation=0.01
+baseInjMutation=0.01
 numIters=500
-numStochasticReplicates=10
+numStochasticReplicates=20
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 numDataPoints=selectedTimePoints.shape[0]
@@ -65,26 +69,15 @@ ifngMax=np.max(ifngMaxs)
 ifngMins=ifngMins/ifngMax
 ifngMaxs=ifngMaxs/ifngMax
 
-data=np.array([[0.075,2,2,1,27],[0.075,6,2,1,27],[0.1,4,2,1,32],[0.1,2,2,2,32],[0.1,6,2,1,32]])
-
 geneLow=-1.5
 geneHigh=2
 critfit=7500
 
 eliteFraction=0.1
 numElites=int(eliteFraction*size)
+#print("NE=",numElites)
 
 np.random.seed(10287)
-
-def printRuleMat(ip):
-    numRules=25
-    numParams=17
-    k=0
-    RM=np.zeros([numRules,numParams])
-    for i in range(numRules):
-        for j in range(numParams):
-            RM[i,j]=ip[k]
-            k=k+1
 
 def getFitnessResult(result,index):
     selectResult=np.zeros(numDataPoints,dtype=np.float32)
@@ -118,35 +111,35 @@ def compareFitness(input,mins,maxs):
     fitsum=np.sum(fitness)
     return fitsum
 
-def getFitness(data,numReplicates,internalParam):
+def getFitness(numReplicates,internalParam,injSize):
     fitnessCompare=np.zeros(numDataPoints,dtype=np.float32)
     tnfResult=np.zeros(numDataPoints,dtype=np.float32)
     il4Result=np.zeros(numDataPoints,dtype=np.float32)
     il10Result=np.zeros(numDataPoints,dtype=np.float32)
     gcsfResult=np.zeros(numDataPoints,dtype=np.float32)
     ifngResult=np.zeros(numDataPoints,dtype=np.float32)
-    for i in range(data.shape[0]):
-        oxyHeal=data[i,0]
-        infectSpread=int(data[i,1])
-        numRecurInj=int(data[i,2])
-        numInfectRepeat=int(data[i,3])
-        injurySize=int(data[i,4])
-        for seed in range(numStochasticReplicates):
-            result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
+
+    oxyHeal=internalParam[429]
+    infectSpread=internalParam[430]
+    numRecurInj=2
+    numInfectRepeat=internalParam[431]
+    injurySize=injSize
+    for seed in range(numStochasticReplicates):
+        result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
                                   numInfectRepeat, injurySize, seed,
                                   numMatrixElements,
                                   array_type(*internalParam),rank)
-            tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
-            il4Result=np.vstack([tnfResult,getFitnessResult(result,15)])
-            il10Result=np.vstack([tnfResult,getFitnessResult(result,4)])
-            gcsfResult=np.vstack([tnfResult,getFitnessResult(result,5)])
-            ifngResult=np.vstack([tnfResult,getFitnessResult(result,12)])
+        tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
+        il4Result=np.vstack([tnfResult,getFitnessResult(result,15)])
+        il10Result=np.vstack([tnfResult,getFitnessResult(result,4)])
+        gcsfResult=np.vstack([tnfResult,getFitnessResult(result,5)])
+        ifngResult=np.vstack([tnfResult,getFitnessResult(result,12)])
 
-    np.delete(tnfResult,0,0)
-    np.delete(il4Result,0,0)
-    np.delete(il10Result,0,0)
-    np.delete(gcsfResult,0,0)
-    np.delete(ifngResult,0,0)
+    tnfResult=np.delete(tnfResult,0,0)
+    il4Result=np.delete(il4Result,0,0)
+    il10Result=np.delete(il10Result,0,0)
+    gcsfResult=np.delete(gcsfResult,0,0)
+    ifngResult=np.delete(ifngResult,0,0)
 
     tnfResult=normalizeResult(tnfResult)
     il4Result=normalizeResult(il4Result)
@@ -164,7 +157,7 @@ def getFitness(data,numReplicates,internalParam):
     return fitsum
 
 def getInitialIP():
-    internalParameterization=np.load('baseParameterization.npy')
+    internalParameterization=np.load('baseParameterization2.npy')
     numMatrixElements = internalParameterization.shape[0]
     np.asarray(internalParameterization, dtype=np.float32)
 
@@ -172,7 +165,7 @@ def getInitialIP():
     nonZeroMatEls=[]
     zeroMatEls=[]
 
-    for i in range(numMatrixElements):
+    for i in range(numBaseMatrixElements):
         if(internalParameterization[i]!=0):
             nonZeroMatEls.append(i)
         else:
@@ -188,7 +181,11 @@ def getInitialIP():
             if(chance<=nonZeroChance):
                 temp=np.random.uniform(low=geneLow,high=geneHigh)
                 internalParamArray[i,zeroMatEls[j]]=temp
-    internalParamArray[0,:]=np.load('baseParameterization.npy')
+    for i in range(size):
+        internalParamArray[i,429]=np.random.uniform(low=0,high=1)
+        internalParamArray[i,430]=np.random.uniform(low=0,high=10)
+        internalParamArray[i,431]=np.random.uniform(low=0,high=8)
+    internalParamArray[0,:]=np.load('baseParameterization2.npy')
     return internalParamArray
 
 def crossover(p1,p2):
@@ -200,11 +197,40 @@ def crossover(p1,p2):
         progeny2[i]=(1-beta)*p2[i]+beta*p1[i]
     return progeny1,progeny2
 
-def mutate(ip):
-    tempRand=np.random.uniform(low=0,high=1000)
-    if((tempRand/1000)<mutationChance):
-        tempIndex=int(np.random.uniform(low=0,high=numMatrixElements))
+def mutate(ip,gmc,imc,pmc):
+    rand_g=np.random.uniform(low=0,high=1000)
+    rand_i=np.random.uniform(low=0,high=1000)
+    rand_p=np.random.uniform(low=0,high=1000)
+    if((rand_g/1000)<gmc):
+        tempIndex=int(np.random.uniform(low=0,high=numBaseMatrixElements))
         ip[tempIndex]=np.random.uniform(low=geneLow,high=geneHigh)
+    if((rand_i/1000)<imc):
+        tempIndex=int(np.random.randint(low=0,high=4))
+        ip[numBaseMatrixElements-4+tempIndex]=np.random.uniform(low=0,high=2)
+    if((rand_p/1000)<pmc):
+        tempIndex=int(np.random.uniform(low=0,high=3))
+        if(tempIndex==0):
+            tempElement=ip[numBaseMatrixElements+tempIndex]
+            tempRand=np.random.randint(low=0,high=2)
+            if(tempRand==0):
+                tempElement=tempElement-0.05
+                if(tempElement<0):
+                    tempElement=0.01
+            else:
+                tempElement=tempElement+0.05
+            ip[numBaseMatrixElements+tempIndex]=tempElement
+        else:
+            tempElement=ip[numBaseMatrixElements+tempIndex]
+            tempRand=np.random.randint(low=0,high=2)
+            if(tempRand==0):
+                tempElement=tempElement-1
+                if(tempElement<0):
+                    tempElement=1
+            else:
+                tempElement=tempElement+1
+                if(tempElement>8):
+                    tempElement=8
+            ip[numBaseMatrixElements+tempIndex]=tempElement
     return ip
 
 def getNextParents(fits,iparray):
@@ -214,6 +240,7 @@ def getNextParents(fits,iparray):
         if(fits[i]<critfit):
             breedables.append(iparray[i,:])
             bfits.append(fits[i])
+#            print("bfits",fits[i])
     breedables=np.asarray(breedables)
     bfits=np.asarray(bfits)
     sortedFitIndexes=np.argsort(bfits)
@@ -236,30 +263,38 @@ def getNextParents(fits,iparray):
     breederFits=[]
     for i in range(0,size,2):
         temp1=np.random.randint(low=0,high=bfits.shape[0])
-        temp2=np.random.randint(low=0,high=bfits.shape[0])
         f1=bfits[temp1]
+        ipf1=breedables[temp1,:]
+        bfits=np.delete(bfits,temp1)
+        breedables=np.delete(breedables,temp1,axis=0)
+        temp2=np.random.randint(low=0,high=bfits.shape[0])
         f2=bfits[temp2]
+        ipf2=breedables[temp2,:]
+        bfits=np.delete(bfits,temp2)
+        breedables=np.delete(breedables,temp2,axis=0)
+#        print("F",f1,temp1,f2,temp2)
         if(f1<f2):
-            winner=temp1
+            winner=ipf1
+            winnerFit=f1
         else:
-            winner=temp2
-        breeders.append(breedables[winner,:])
-        breederFits.append(bfits[winner])
-        bfits=np.delete(bfits,[temp1,temp2])
-        breedables=np.delete(breedables,[temp1,temp2],axis=0)
+            winner=ipf2
+            winnerFit=f2
+#        print("winner=",winner)
+        breeders.append(winner)
+        breederFits.append(winnerFit)
 
     breeders=np.asarray(breeders)
     breederFits=np.asarray(breederFits)
 
     return breeders,breederFits
 
-def getNextGeneration(breeders,breederFits):
+def getNextGeneration(breeders,breederFits,gmc,imc,pmc):
     newIParray=np.zeros([size,numMatrixElements],dtype=np.float32)
     parentArray=np.zeros([size,numMatrixElements],dtype=np.float32)
     parentFitArray=np.zeros(size,dtype=np.float32)
     print(breederFits)
     for i in range(0,size,2):
-        if(breeders.shape[0]>2):
+        if(breeders.shape[0]>=2):
             temp1=np.random.randint(low=0,high=breeders.shape[0])
             p1=breeders[temp1,:]
             parentFitArray[i]=breederFits[temp1]
@@ -267,8 +302,8 @@ def getNextGeneration(breeders,breederFits):
             p2=breeders[temp2,:]
             parentFitArray[i+1]=breederFits[temp2]
         c1,c2=crossover(p1,p2)
-        c1=mutate(c1)
-        c2=mutate(c2)
+        c1=mutate(c1,gmc,imc,pmc)
+        c2=mutate(c2,gmc,imc,pmc)
         newIParray[i,:]=c1
         newIParray[i+1,:]=c2
         parentArray[i,:]=p1
@@ -280,12 +315,13 @@ def compareGenerations(fitArray,iparray,parentArray,parentFitArray):  #parentArr
     sortParents=np.argsort(parentFitArray)
     for i in range(numElites):
         compIndex=sortFits.shape[0]-(i+1)
+        print("CGTEST",i,compIndex,parentFitArray[sortParents[i]],fitArray[compIndex])
         if(parentFitArray[sortParents[i]]<fitArray[compIndex]):
             fitArray[compIndex]=parentFitArray[sortParents[i]]
             iparray[compIndex,:]=parentArray[sortParents[i],:]
     return iparray,fitArray
 
-def gaIter(recvbuf,iparray,parentArray,parentFitArray,genNumber):
+def gaIter(recvbuf,iparray,parentArray,parentFitArray,genNumber,gmc,imc,pmc):
     fits=[]
     for i in range(size):
         fits.append(recvbuf[i])
@@ -293,7 +329,7 @@ def gaIter(recvbuf,iparray,parentArray,parentFitArray,genNumber):
 #    if(genNumber>0):
     iparray,fits=compareGenerations(fits,iparray,parentArray,parentFitArray)
     breeders,breederFits=getNextParents(fits,iparray)
-    newIParray,parents,parentFits=getNextGeneration(breeders,breederFits)
+    newIParray,parents,parentFits=getNextGeneration(breeders,breederFits,gmc,imc,pmc)
     avgFit=np.mean(breederFits)
     return newIParray,avgFit,parents,parentFits
 
@@ -307,11 +343,15 @@ parentArray=np.zeros([size,numMatrixElements])
 parentFitArray=np.zeros(size)
 parentFitArray=parentFitArray+1000000
 
+injSize=int(sys.argv[1])
+
 for i in range(numIters):
-    mutationChance=0.010+0.03*i
+    geneMutationChance=baseGeneMutation+0.01*i
+    injMutationChance=baseInjMutation+0.01*i
+    paramMutationChance=baseParamMutation+0.01*i
     myIP=comm.scatter(iparray,root=0)
-    myFitness=getFitness(data,numStochasticReplicates,myIP)
-    print("FITNESS_%s="%i,rank,myFitness)
+    myFitness=getFitness(numStochasticReplicates,myIP,injSize)
+    print("FITNESS_%s="%i,rank,myFitness,myIP[429:432])
     recvbuf=None
     sendbuf=myFitness
     if rank==0:
@@ -319,12 +359,12 @@ for i in range(numIters):
     comm.Gather(sendbuf, recvbuf, root=0)
 
     if(rank==0):
-        iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i)
+        iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
         averages.append(avgFit)
-        iname=str('InternalParameterizationFull_Gen%s.csv'%i)
+        iname=str('InternalParameterization_IS%s_Gen%s.csv'%(injSize,i))
         np.savetxt(iname,iparray,delimiter=',')
         print("Average Fitness=",avgFit)
 
 if(rank==0):
     averages=np.asarray(averages)
-    np.savetxt('FinalAveragesFull.csv',averages,delimiter=',')
+    np.savetxt('FinalAverages_%s.csv'%injSize,averages,delimiter=',')
