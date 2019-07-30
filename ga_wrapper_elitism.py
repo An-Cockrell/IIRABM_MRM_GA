@@ -103,6 +103,7 @@ def getFitness(data,numReplicates,internalParam):
             term2=100
         fitness[i]=term1+term2
     fitsum=np.sum(fitness)
+    print(rank,fitness)
 #    print(fitMin,fitMax,fitness)
     return fitsum
 
@@ -281,7 +282,7 @@ for i in range(numIters):
     if(rank==0):
         iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i)
         averages.append(avgFit)
-        iname=str('InternalParameterization_Gen%s.csv'%i)
+        iname=str('InternalParameterizationTNF_Gen%s.csv'%i)
         np.savetxt(iname,iparray,delimiter=',')
         print("Average Fitness=",avgFit)
 
