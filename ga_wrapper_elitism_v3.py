@@ -369,6 +369,6 @@ for i in range(numIters):
         averages.append(avgFit)
         print("Average Fitness=",avgFit)
 
-    if(rank==0):
-        averages=np.asarray(averages)
-        np.savetxt('FinalAverages_%s.csv'%injSize,averages,delimiter=',')
+if(rank==0):
+    averages=np.asarray(averages)
+    np.savetxt('FinalAverages_%s.csv'%injSize,averages,delimiter=',')
