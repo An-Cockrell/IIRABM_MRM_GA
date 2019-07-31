@@ -34,7 +34,7 @@ baseGeneMutation=0.01
 baseParamMutation=0.01
 baseInjMutation=0.01
 numIters=500
-numStochasticReplicates=2
+numStochasticReplicates=20
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 numDataPoints=selectedTimePoints.shape[0]
@@ -369,6 +369,6 @@ for i in range(numIters):
         averages.append(avgFit)
         print("Average Fitness=",avgFit)
 
-if(rank==0):
-    averages=np.asarray(averages)
-    np.savetxt('FinalAverages_%s.csv'%injSize,averages,delimiter=',')
+    if(rank==0):
+        averages=np.asarray(averages)
+        np.savetxt('FinalAverages_%s.csv'%injSize,averages,delimiter=',')
