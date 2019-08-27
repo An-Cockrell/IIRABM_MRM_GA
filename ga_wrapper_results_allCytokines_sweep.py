@@ -26,13 +26,10 @@ _IIRABM.mainSimulation.restype = ndpointer(
     dtype=ctypes.c_float, shape=(20, 5280))
 
 injSize=25
-numStochasticReplicates=20
-numSamples=1020
-
-
 
 numBaseMatrixElements=429
 numMatrixElements=432
+numStochasticReplicates=20
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 numDataPoints=selectedTimePoints.shape[0]
@@ -71,26 +68,17 @@ np.random.seed(10287)
 
 def compareFitness(input,mins,maxs):
     fitness=np.zeros(numDataPoints,dtype=np.float32)
-    mns=[]
-    mxs=[]
     for i in range(numDataPoints):
         temp=input[:,i]
         fitMin=np.min(input[:,i])
         fitMax=np.max(input[:,i])
-        mns.append(fitMin)
-        mxs.append(fitMax)
         term1=abs(fitMin-mins[i])
         term2=abs(fitMax-maxs[i])
         if(fitMax==0):
             term2=100
         fitness[i]=term1+term2
-    mns=np.asarray(mns)
-    mxs=np.asarray(mxs)
-    # print(mns)
-    # print(mxs)
-    # print(fitness)
     fitsum=np.sum(fitness)
-    return fitsum,mns,mxs,fitness
+    return fitsum
 
 def getFitnessResult(result,index):
     selectResult=np.zeros(numDataPoints,dtype=np.float32)
@@ -132,10 +120,10 @@ def getFitness(numReplicates,internalParam):
                                  numMatrixElements,
                                  array_type(*internalParam),rank)
         tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
-        il4Result=np.vstack([tnfResult,getFitnessResult(result,15)])
-        il10Result=np.vstack([tnfResult,getFitnessResult(result,4)])
-        gcsfResult=np.vstack([tnfResult,getFitnessResult(result,5)])
-        ifngResult=np.vstack([tnfResult,getFitnessResult(result,12)])
+        il4Result=np.vstack([il4Result,getFitnessResult(result,15)])
+        il10Result=np.vstack([il10Result,getFitnessResult(result,4)])
+        gcsfResult=np.vstack([gcsfResult,getFitnessResult(result,5)])
+        ifngResult=np.vstack([ifngResult,getFitnessResult(result,12)])
 
     tnfResult=np.delete(tnfResult,0,0)
     il4Result=np.delete(il4Result,0,0)
@@ -152,29 +140,72 @@ def getFitness(numReplicates,internalParam):
     # if(rank==0):
     #     print(tnfResult)
 
-    fit1s,f1mn,f1mx,f1=compareFitness(tnfResult,tnfMins,tnfMaxs)
-    fit2s,f2mn,f2mx,f2=compareFitness(il4Result,il4Mins,il4Maxs)
-    fit3s,f3mn,f3mx,f3=compareFitness(il10Result,il10Mins,il10Maxs)
-    fit4s,f4mn,f4mx,f4=compareFitness(gcsfResult,gcsfMins,gcsfMaxs)
-    fit5s,f5mn,f5mx,f5=compareFitness(ifngResult,ifngMins,ifngMaxs)
-    fitsum=fit1s+fit2s+fit3s+fit4s+fit5s
+    fit1=compareFitness(tnfResult,tnfMins,tnfMaxs)
+    fit2=compareFitness(il4Result,il4Mins,il4Maxs)
+    fit3=compareFitness(il10Result,il10Mins,il10Maxs)
+    fit4=compareFitness(gcsfResult,gcsfMins,gcsfMaxs)
+    fit5=compareFitness(ifngResult,ifngMins,ifngMaxs)
+    fitsum=fit1+fit2+fit3+fit4+fit5
 
-    allMins=np.vstack((f1mn,f2mn,f3mn,f4mn,f5mn))
-    allMaxs=np.vstack((f1mx,f2mx,f3mx,f4mx,f5mx))
+    return tnfResult,il4Result,il10Result,gcsfResult,ifngResult,fitsum
 
-    return allMins,allMaxs,fitsum
-
-iparray=np.loadtxt('InternalParameterization_H_IS25_Gen249.csv',delimiter=',')
-fitnessArray=np.loadtxt('Fitness_IS25_Gen249.csv',delimiter=',')
+iparray=np.loadtxt('InternalParameterization_IS25_Gen193.csv',delimiter=',')
+minFit=100000;
 if(rank==0):
     print("ParamShape=",iparray.shape)
-
-numIters=int(numSamples/size)
-
-for i in range(numIters):
-    myIP=iparray[rank+i*size,:]
-    myMins,myMaxs,myFitness=getFitness(numStochasticReplicates,myIP)
-    index=rank+i*size;
-    print(rank,index,myFitness)
-    np.savetxt('AllMins_%s_%s.csv'%(index,numStochasticReplicates),myMins,delimiter=',')
-    np.savetxt('AllMaxs_%s_%s.csv'%(index,numStochasticReplicates),myMaxs,delimiter=',')
+for iter in range(20):
+    myIP=iparray[rank+60*iter,:]
+#print("myIP=",myIP)
+    myTNF,myIL4,myIL10,myGCSF,myIFNG,myFitness=getFitness(numStochasticReplicates,myIP)
+    #print("FITNESS=",rank,myFitness,rank+60*i)
+    recvbuf=None
+    sendbuf=myFitness
+    if rank==0:
+        recvbuf=np.empty([size], dtype=np.float32)
+    comm.Gather(sendbuf, recvbuf, root=0)
+    if(rank==0):
+        for i in range(size):
+            if(recvbuf[i]<minFit):
+                minFit=recvbuf[i];
+                fitIndex=i+60*iter
+        print("Min Fit,index=",iter,minFit,fitIndex)
+# if(rank==0):
+#     recvTNF=np.empty([numStochasticReplicates*size,15], dtype=np.float32)
+#     recvIL4=np.empty([numStochasticReplicates*size,15], dtype=np.float32)
+#     recvIL10=np.empty([numStochasticReplicates*size,15], dtype=np.float32)
+#     recvGCSF=np.empty([numStochasticReplicates*size,15], dtype=np.float32)
+#     recvIFNG=np.empty([numStochasticReplicates*size,15], dtype=np.float32)
+# else:
+#     recvTNF=None
+#     recvIL4=None
+#     recvIL10=None
+#     recvGCSF=None
+#     recvIFNG=None
+#
+# comm.Gatherv(myTNF,recvTNF, root=0)
+# if(rank==0):
+#     print("Gather 1")
+# comm.Gatherv(myIL4,recvIL4, root=0)
+# if(rank==0):
+#     print("Gather 2")
+# comm.Gatherv(myIL10,recvIL10, root=0)
+# if(rank==0):
+#     print("Gather 3")
+# comm.Gatherv(myGCSF,recvGCSF, root=0)
+# if(rank==0):
+#     print("Gather 4")
+# comm.Gatherv(myIFNG,recvIFNG, root=0)
+# if(rank==0):
+#     print("Gather 5")
+# if(rank==0):
+#     print(recvTNF.shape)
+#     print(recvIL4.shape)
+#     print(recvIL10.shape)
+#     print(recvGCSF.shape)
+#     print(recvIFNG.shape)
+#
+#     np.savetxt('otnf.csv',recvTNF,delimiter=',')
+#     np.savetxt('oil4.csv',recvIL4,delimiter=',')
+#     np.savetxt('oil10.csv',recvIL10,delimiter=',')
+#     np.savetxt('ogcsf.csv',recvGCSF,delimiter=',')
+#     np.savetxt('oifng.csv',recvIFNG,delimiter=',')

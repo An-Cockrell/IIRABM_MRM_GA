@@ -120,11 +120,11 @@ def getFitness(numReplicates,internalParam):
     injurySize=injSize
 
 
-    tnfResult=np.zeros(numDataPoints,dtype=np.float32)
-    il4Result=np.zeros(numDataPoints,dtype=np.float32)
-    il10Result=np.zeros(numDataPoints,dtype=np.float32)
-    gcsfResult=np.zeros(numDataPoints,dtype=np.float32)
-    ifngResult=np.zeros(numDataPoints,dtype=np.float32)
+    tnfResult=np.zeros(numTimePoints,dtype=np.float32)
+    il4Result=np.zeros(numTimePoints,dtype=np.float32)
+    il10Result=np.zeros(numTimePoints,dtype=np.float32)
+    gcsfResult=np.zeros(numTimePoints,dtype=np.float32)
+    ifngResult=np.zeros(numTimePoints,dtype=np.float32)
     for seed in range(numStochasticReplicates):
 #        print(seed)
         result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
@@ -132,10 +132,10 @@ def getFitness(numReplicates,internalParam):
                                  numMatrixElements,
                                  array_type(*internalParam),rank)
         tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
-        il4Result=np.vstack([tnfResult,getFitnessResult(result,15)])
-        il10Result=np.vstack([tnfResult,getFitnessResult(result,4)])
-        gcsfResult=np.vstack([tnfResult,getFitnessResult(result,5)])
-        ifngResult=np.vstack([tnfResult,getFitnessResult(result,12)])
+        il4Result=np.vstack([il4Result,getFitnessResult(result,15)])
+        il10Result=np.vstack([il10Result,getFitnessResult(result,4)])
+        gcsfResult=np.vstack([gcsfResult,getFitnessResult(result,5)])
+        ifngResult=np.vstack([ifngResult,getFitnessResult(result,12)])
 
     tnfResult=np.delete(tnfResult,0,0)
     il4Result=np.delete(il4Result,0,0)
@@ -148,6 +148,8 @@ def getFitness(numReplicates,internalParam):
     il10Result=normalizeResult(il10Result)
     gcsfResult=normalizeResult(gcsfResult)
     ifngResult=normalizeResult(ifngResult)
+
+    np.savetxt('AllMins_%s_%s.csv'%(index,numStochasticReplicates),myMins,delimiter=',')
 
     # if(rank==0):
     #     print(tnfResult)

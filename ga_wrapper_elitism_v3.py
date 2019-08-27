@@ -130,10 +130,10 @@ def getFitness(numReplicates,internalParam,injSize):
                                   numMatrixElements,
                                   array_type(*internalParam),rank)
         tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
-        il4Result=np.vstack([tnfResult,getFitnessResult(result,15)])
-        il10Result=np.vstack([tnfResult,getFitnessResult(result,4)])
-        gcsfResult=np.vstack([tnfResult,getFitnessResult(result,5)])
-        ifngResult=np.vstack([tnfResult,getFitnessResult(result,12)])
+        il4Result=np.vstack([il4Result,getFitnessResult(result,15)])
+        il10Result=np.vstack([il10Result,getFitnessResult(result,4)])
+        gcsfResult=np.vstack([gcsfResult,getFitnessResult(result,5)])
+        ifngResult=np.vstack([ifngResult,getFitnessResult(result,12)])
 
     tnfResult=np.delete(tnfResult,0,0)
     il4Result=np.delete(il4Result,0,0)
@@ -146,9 +146,6 @@ def getFitness(numReplicates,internalParam,injSize):
     il10Result=normalizeResult(il10Result)
     gcsfResult=normalizeResult(gcsfResult)
     ifngResult=normalizeResult(ifngResult)
-
-    # if(rank==0):
-    #     print(tnfResult)
 
     fit1=compareFitness(tnfResult,tnfMins,tnfMaxs)
     fit2=compareFitness(il4Result,il4Mins,il4Maxs)
@@ -364,7 +361,9 @@ for i in range(numIters):
 
     if(rank==0):
         iname=str('InternalParameterization_IS%s_Gen%s.csv'%(injSize,i))
+        fname=(str('Fitness_IS%s_Gen%s.csv'%(injSize,i))
         np.savetxt(iname,iparray,delimiter=',')
+        np.savetxt(fname,recvbuf,delimiter=',')
         iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
         averages.append(avgFit)
         print("Average Fitness=",avgFit)
