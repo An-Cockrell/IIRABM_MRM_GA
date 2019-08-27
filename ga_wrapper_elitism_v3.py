@@ -361,7 +361,7 @@ for i in range(numIters):
 
     if(rank==0):
         iname=str('InternalParameterization_IS%s_Gen%s.csv'%(injSize,i))
-        fname=(str('Fitness_IS%s_Gen%s.csv'%(injSize,i))
+        fname=str('Fitness_IS%s_Gen%s.csv'%(injSize,i))
         np.savetxt(iname,iparray,delimiter=',')
         iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
         np.savetxt(fname,recvbuf,delimiter=',')
