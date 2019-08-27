@@ -363,8 +363,8 @@ for i in range(numIters):
         iname=str('InternalParameterization_IS%s_Gen%s.csv'%(injSize,i))
         fname=(str('Fitness_IS%s_Gen%s.csv'%(injSize,i))
         np.savetxt(iname,iparray,delimiter=',')
-        np.savetxt(fname,recvbuf,delimiter=',')
         iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
+        np.savetxt(fname,recvbuf,delimiter=',')
         averages.append(avgFit)
         print("Average Fitness=",avgFit)
 
