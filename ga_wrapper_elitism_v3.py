@@ -52,19 +52,19 @@ il4Mins=il4Mins/il4Max
 il4Maxs=il4Maxs/il4Max
 
 gcsfMins=np.array([47.75,15.92,0,0,0,0,0,19.89,47.75,23.87,3.98,0,0,3.98,0])
-gcsfMaxs=np.array([3846,11071,1102,823,831,107,139,159,640,405,508,1090,342,413,441])
+gcsfMaxs=np.array([3846,11071,1102,823,831,107,139,159,640,405,508,1090,342,413,441.0])
 gcsfMax=np.max(gcsfMaxs)
 gcsfMins=gcsfMins/gcsfMax
 gcsfMaxs=gcsfMaxs/gcsfMax
 
 il10Mins=np.array([34.48,11.94,0,2.65,7.96,3.98,23.87,0,11.94,1.33,2.65,1.33,0,1.33,3.98])
-il10Maxs=np.array([228,199,454,198,228,243,284,118,842,122,184,3842,49,15,14])
+il10Maxs=np.array([228,199,454,198,228,243,284,118,842,122,184,3842,49,15,14.0])
 il10Max=np.max(il10Maxs)
 il10Mins=il10Mins/il10Max
 il10Maxs=il10Maxs/il10Max
 
 ifngMins=np.array([52,0,4.76,0,4.76,0,9.52,0,4.76,9.52,0,4.76,9.52,0,4.76])
-ifngMaxs=np.array([11071,2857,974,850,902,759,1136,902,1017,1218,1700,2142,2142,754,587])
+ifngMaxs=np.array([11071,2857,974,850,902,759,1136,902,1017,1218,1700,2142,2142,754,587.0])
 ifngMax=np.max(ifngMaxs)
 ifngMins=ifngMins/ifngMax
 ifngMaxs=ifngMaxs/ifngMax
