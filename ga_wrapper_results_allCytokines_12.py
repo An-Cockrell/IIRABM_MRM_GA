@@ -27,14 +27,13 @@ _IIRABM.mainSimulation.restype = ndpointer(
 
 injSize=25
 numStochasticReplicates=20
-numSamples=1020
-
+numSamples=1024
 
 
 numBaseMatrixElements=429
 numMatrixElements=432
 array_type = ctypes.c_float*numMatrixElements
-selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
+selectedTimePoints=np.array([119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 numDataPoints=selectedTimePoints.shape[0]
 
 tnfMins=np.array([22.34,20.74,0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
@@ -50,19 +49,19 @@ il4Mins=il4Mins/il4Max
 il4Maxs=il4Maxs/il4Max
 
 gcsfMins=np.array([47.75,15.92,0,0,0,0,0,19.89,47.75,23.87,3.98,0,0,3.98,0])
-gcsfMaxs=np.array([3846,11071,1102,823,831,107,139,159,640,405,508,1090,342,413,441])
+gcsfMaxs=np.array([3846,11071,1102,823,831,107,139,159,640,405,508,1090,342,413,441.0])
 gcsfMax=np.max(gcsfMaxs)
 gcsfMins=gcsfMins/gcsfMax
 gcsfMaxs=gcsfMaxs/gcsfMax
 
 il10Mins=np.array([34.48,11.94,0,2.65,7.96,3.98,23.87,0,11.94,1.33,2.65,1.33,0,1.33,3.98])
-il10Maxs=np.array([228,199,454,198,228,243,284,118,842,122,184,3842,49,15,14])
+il10Maxs=np.array([228,199,454,198,228,243,284,118,842,122,184,3842,49,15,14.0])
 il10Max=np.max(il10Maxs)
 il10Mins=il10Mins/il10Max
 il10Maxs=il10Maxs/il10Max
 
 ifngMins=np.array([52,0,4.76,0,4.76,0,9.52,0,4.76,9.52,0,4.76,9.52,0,4.76])
-ifngMaxs=np.array([11071,2857,974,850,902,759,1136,902,1017,1218,1700,2142,2142,754,587])
+ifngMaxs=np.array([11071,2857,974,850,902,759,1136,902,1017,1218,1700,2142,2142,754,587.0])
 ifngMax=np.max(ifngMaxs)
 ifngMins=ifngMins/ifngMax
 ifngMaxs=ifngMaxs/ifngMax
@@ -87,8 +86,13 @@ def compareFitness(input,mins,maxs):
     mns=np.asarray(mns)
     mxs=np.asarray(mxs)
     # print(mns)
+    # print(mins)
+    # print('------------------')
     # print(mxs)
+    # print(maxs)
+    # print('------------------')
     # print(fitness)
+    # print('------------------')
     fitsum=np.sum(fitness)
     return fitsum,mns,mxs,fitness
 
@@ -97,12 +101,6 @@ def getFitnessResult(result,index):
     for j in range(numDataPoints):
         if(result[index,selectedTimePoints[j]-1]<0):
             result[index,selectedTimePoints[j]-1]=0
-        selectResult[j]=result[index,selectedTimePoints[j]-1]
-    return selectResult
-
-def getFitnessResult2(result,index):
-    selectResult=np.zeros(numDataPoints,dtype=np.float32)
-    for j in range(numDataPoints):
         selectResult[j]=result[index,selectedTimePoints[j]-1]
     return selectResult
 
@@ -126,27 +124,22 @@ def getFitness(numReplicates,internalParam):
     injurySize=injSize
 
 
-    tnfResult=np.zeros(numTimePoints,dtype=np.float32)
-    il4Result=np.zeros(numTimePoints,dtype=np.float32)
-    il10Result=np.zeros(numTimePoints,dtype=np.float32)
-    gcsfResult=np.zeros(numTimePoints,dtype=np.float32)
-    ifngResult=np.zeros(numTimePoints,dtype=np.float32)
+    tnfResult=np.zeros(numDataPoints,dtype=np.float32)
+    il4Result=np.zeros(numDataPoints,dtype=np.float32)
+    il10Result=np.zeros(numDataPoints,dtype=np.float32)
+    gcsfResult=np.zeros(numDataPoints,dtype=np.float32)
+    ifngResult=np.zeros(numDataPoints,dtype=np.float32)
     for seed in range(numStochasticReplicates):
 #        print(seed)
         result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
                                  numInfectRepeat, injurySize, seed,
                                  numMatrixElements,
                                  array_type(*internalParam),rank)
-        # tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
-        # il4Result=np.vstack([il4Result,getFitnessResult(result,15)])
-        # il10Result=np.vstack([il10Result,getFitnessResult(result,4)])
-        # gcsfResult=np.vstack([gcsfResult,getFitnessResult(result,5)])
-        # ifngResult=np.vstack([ifngResult,getFitnessResult(result,12)])
-        tnfResult=np.vstack([tnfResult,getFitnessResult2(result,2)])
-        il4Result=np.vstack([il4Result,getFitnessResult2(result,15)])
-        il10Result=np.vstack([il10Result,getFitnessResult2(result,4)])
-        gcsfResult=np.vstack([gcsfResult,getFitnessResult2(result,5)])
-        ifngResult=np.vstack([ifngResult,getFitnessResult2(result,12)])
+        tnfResult=np.vstack([tnfResult,getFitnessResult(result,2)])
+        il4Result=np.vstack([il4Result,getFitnessResult(result,15)])
+        il10Result=np.vstack([il10Result,getFitnessResult(result,4)])
+        gcsfResult=np.vstack([gcsfResult,getFitnessResult(result,5)])
+        ifngResult=np.vstack([ifngResult,getFitnessResult(result,12)])
 
     tnfResult=np.delete(tnfResult,0,0)
     il4Result=np.delete(il4Result,0,0)
@@ -169,14 +162,14 @@ def getFitness(numReplicates,internalParam):
     fit4s,f4mn,f4mx,f4=compareFitness(gcsfResult,gcsfMins,gcsfMaxs)
     fit5s,f5mn,f5mx,f5=compareFitness(ifngResult,ifngMins,ifngMaxs)
     fitsum=fit1s+fit2s+fit3s+fit4s+fit5s
-
+    # print("Fits=",fit1s,fit2s,fit3s,fit4s,fit5s)
     allMins=np.vstack((f1mn,f2mn,f3mn,f4mn,f5mn))
     allMaxs=np.vstack((f1mx,f2mx,f3mx,f4mx,f5mx))
 
     return allMins,allMaxs,fitsum
 
-iparray=np.loadtxt('InternalParameterization_H_IS25_Gen249.csv',delimiter=',')
-fitnessArray=np.loadtxt('Fitness_IS25_Gen249.csv',delimiter=',')
+iparray=np.loadtxt('CurrentData/InternalParameterization_H_RandCh12_IS25_Gen249.csv',delimiter=',')
+#fitnessArray=np.loadtxt('PaperData/Fitness_RandCh_IS25_Gen249.csv',delimiter=',')
 if(rank==0):
     print("ParamShape=",iparray.shape)
 
@@ -184,8 +177,11 @@ numIters=int(numSamples/size)
 
 for i in range(numIters):
     myIP=iparray[rank+i*size,:]
+#    myIP=iparray[83,:]
     myMins,myMaxs,myFitness=getFitness(numStochasticReplicates,myIP)
     index=rank+i*size;
     print(rank,index,myFitness)
-    np.savetxt('AllMins2_%s_%s.csv'%(index,numStochasticReplicates),myMins,delimiter=',')
-    np.savetxt('AllMaxs2_%s_%s.csv'%(index,numStochasticReplicates),myMaxs,delimiter=',')
+    np.savetxt('AllMins_%s_%s.csv'%(index,numStochasticReplicates),myMins,delimiter=',')
+    np.savetxt('AllMaxs_%s_%s.csv'%(index,numStochasticReplicates),myMaxs,delimiter=',')
+    # np.savetxt('AllMins_83.csv',myMins,delimiter=',')
+    # np.savetxt('AllMaxs_83.csv',myMaxs,delimiter=',')
