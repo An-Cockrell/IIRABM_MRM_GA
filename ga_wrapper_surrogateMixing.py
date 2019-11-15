@@ -20,6 +20,8 @@ numDataPoints=selectedTimePoints.shape[0]
 geneLow=-2
 geneHigh=2
 
+populationSize=1024
+
 np.random.seed(10287)
 
 def getInitialIP():
@@ -27,7 +29,7 @@ def getInitialIP():
     numMatrixElements = internalParameterization.shape[0]
     np.asarray(internalParameterization, dtype=np.float32)
 
-    internalParamArray=np.zeros([size,numMatrixElements],dtype=np.float32)
+    internalParamArray=np.zeros([populationSize,numMatrixElements],dtype=np.float32)
     nonZeroMatEls=[]
     zeroMatEls=[]
 
@@ -38,7 +40,7 @@ def getInitialIP():
             zeroMatEls.append(i)
     nonZeroMatEls=np.asarray(nonZeroMatEls)
     zeroMatEls=np.asarray(zeroMatEls)
-    for i in range(size):
+    for i in range(populationSize):
         for j in range(nonZeroMatEls.shape[0]):
             temp=np.random.uniform(low=geneLow,high=geneHigh)
             internalParamArray[i,nonZeroMatEls[j]]=temp
@@ -51,8 +53,8 @@ def getInitialIP():
     return internalParamArray
 
 def getRandomIP():
-    internalParamArray=np.zeros([size,numMatrixElements],dtype=np.float32)
-    for i in range(size):
+    internalParamArray=np.zeros([populationSize,numMatrixElements],dtype=np.float32)
+    for i in range(populationSize):
         for j in range(numBaseMatrixElements):
             temp=np.random.uniform(low=geneLow,high=geneHigh)
             internalParamArray[i,j]=temp
@@ -80,74 +82,49 @@ def mutate(ip,gmc,imc,pmc):
 
     return ip
 
-def getNextParents(iparray):
-    breedables=[] #potential breeders
-    bfits=[] #potential breeders associated fits
-    for i in range(iparray.shape[0]):
-        if(fits[i]<critfit):
-            breedables.append(iparray[i,:])
-            bfits.append(fits[i])
-#            print("bfits",fits[i])
-    breedables=np.asarray(breedables)
-    bfits=np.asarray(bfits)
-    sortedFitIndexes=np.argsort(bfits)
-    addBreedables=[]
-    addfits=[]
-    if(bfits.shape[0]<size): #adding fittest candidate duplicates to set of potential breeders
-        diff=size-bfits.shape[0]
-        k=0;
-        for i in range(diff):
-            addBreedables.append(iparray[sortedFitIndexes[k],:])
-            addfits.append(bfits[k])
-            k=k+1;
-            if(k>sortedFitIndexes.shape[0]-1):
-                k=0
-        addfits=np.asarray(addfits)
-        bfits=np.hstack([bfits,addfits])
-        breedables=np.vstack([breedables,addBreedables])
-#    np.random.shuffle(breedables)
+def getNextParents(surrogateModel,iparray):
+    np.random.shuffle(iparray)
     breeders=[]
-    breederFits=[]
-    for i in range(0,size,2):
-        temp1=np.random.randint(low=0,high=bfits.shape[0])
-        f1=bfits[temp1]
-        ipf1=breedables[temp1,:]
-        bfits=np.delete(bfits,temp1)
-        breedables=np.delete(breedables,temp1,axis=0)
-        temp2=np.random.randint(low=0,high=bfits.shape[0])
-        f2=bfits[temp2]
-        ipf2=breedables[temp2,:]
-        bfits=np.delete(bfits,temp2)
-        breedables=np.delete(breedables,temp2,axis=0)
-#        print("F",f1,temp1,f2,temp2)
-        if(f1<f2):
-            winner=ipf1
-            winnerFit=f1
-        else:
-            winner=ipf2
-            winnerFit=f2
-#        print("winner=",winner)
-        breeders.append(winner)
-        breederFits.append(winnerFit)
+    candidates=np.zeros([populationSize,numMatrixElements*2],dtype=np.float32)
+    k=0
+    for i in range(0,populationSize,2):
+        candidate1=iparray[i,:]
+        candidate2=iparray[i+1,:]
+        candidates[k,:]=np.hstack([candidate1,candidate2])
+    answer,probability=evaluateCandidates(surrogateModel,candidate1,candidate2)
 
-    breeders=np.asarray(breeders)
-    breederFits=np.asarray(breederFits)
+    parents=np.zeros([populationSize/2,numMatrixElements])
+    for i in range(populationSize/2):
+        parents[i,:]=getNextProbabilisticParent(candidates[i],answer[i],probability[i])
+#        parents[i,:]=getNextDeterministicParent(candidates[i],answer[i])
+    return parents
 
-    return breeders
+def getNextProbabilisticParent(candidate,answer,probability):
+
+    returnParent=(1.-probability)*candidate[0:numMatrixElements]+probability*candidate[numMatrixElements:2*numMatrixElements]
+    return returnParent
+
+def getNextDeterministicParent(candidates,answer):
+    if(answer==0):
+        returnParent=candidate[0:numMatrixElements]
+    if(answer==1)
+        returnParent=candidate[numMatrixElements:2*numMatrixElements]\
+    return returnParent
+
+def evaluateCandidates(surrogateModel,candidates):
+        #class 0 means the first candidate is fittest, class 1 is the opposite
+        #predict probs give the prob of class 1
+    fits=surrogateModel.predict(candidates)
+    fitProbs=surrogateModel.predict_proba(candidates)
+    fits=np.rint(fits)
+    return fits,fitProbs
 
 def getNextGeneration(breeders,gmc,imc,pmc):
-    newIParray=np.zeros([size,numMatrixElements],dtype=np.float32)
-    parentArray=np.zeros([size,numMatrixElements],dtype=np.float32)
-    parentFitArray=np.zeros(size,dtype=np.float32)
-    print(breederFits)
-    for i in range(0,size,2):
-        if(breeders.shape[0]>=2):
-            temp1=np.random.randint(low=0,high=breeders.shape[0])
-            p1=breeders[temp1,:]
-            parentFitArray[i]=breederFits[temp1]
-            temp2=np.random.randint(low=0,high=breeders.shape[0])
-            p2=breeders[temp2,:]
-            parentFitArray[i+1]=breederFits[temp2]
+    np.shuffle(breeders)
+    newIParray=np.zeros([populationSize,numMatrixElements],dtype=np.float32)
+    for i in range(0,populationSize,2):
+        p1=breeders[i,:]
+        p2=breeders[i+1,:]
         c1,c2=crossover(p1,p2)
         c1=mutate(c1,gmc,imc,pmc)
         c2=mutate(c2,gmc,imc,pmc)
@@ -157,10 +134,9 @@ def getNextGeneration(breeders,gmc,imc,pmc):
         parentArray[i+1,:]=p2
     return newIParray
 
-
 def gaIter(surrogateModel,iparray,genNumber,gmc,imc,pmc):
-    breeders,breederFits=getNextParents(fits,iparray)
-    newIParray,parents=getNextGeneration(breeders,breederFits,gmc,imc,pmc)
+    breeders=getNextParents(surrogateModel,iparray)
+    newIParray=getNextGeneration(breeders,gmc,imc,pmc)
     return newIParray
 
 injSize=int(sys.argv[1])
