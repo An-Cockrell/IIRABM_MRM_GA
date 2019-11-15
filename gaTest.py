@@ -15,7 +15,8 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 # Ctypes initialization
-_IIRABM = ctypes.CDLL('/home/chase/iirabm_fullga/IIRABM_RuleGA.so')
+#_IIRABM = ctypes.CDLL('/home/chase/iirabm_fullga/IIRABM_RuleGA.so')
+_IIRABM = ctypes.CDLL('/home/chase/IIRABM_MRM_GA/IIRABM_RuleGA.so')
 #_IIRABM = ctypes.CDLL('/users/r/c/rcockrel/iirabm_fullga/IIRABM_RuleGA.so')
 #_IIRABM = ctypes.CDLL('/global/cscratch1/sd/cockrell/IIRABM_RuleGA.so')
 
@@ -33,7 +34,7 @@ numMatrixElements=432
 baseGeneMutation=0.01
 baseParamMutation=0.01
 baseInjMutation=0.01
-numIters=500
+numIters=1
 numStochasticReplicates=2
 array_type = ctypes.c_float*numMatrixElements
 
@@ -73,10 +74,10 @@ def getInitialIP():
             if(chance<=nonZeroChance):
                 temp=np.random.uniform(low=geneLow,high=geneHigh)
                 internalParamArray[i,zeroMatEls[j]]=temp
-    for i in range(size):
-        internalParamArray[i,429]=np.random.uniform(low=0,high=1)
-        internalParamArray[i,430]=np.random.uniform(low=0,high=10)
-        internalParamArray[i,431]=np.random.uniform(low=0,high=8)
+    # for i in range(size):
+    #     internalParamArray[i,429]=np.random.uniform(low=0,high=1)
+    #     internalParamArray[i,430]=np.random.uniform(low=0,high=10)
+    #     internalParamArray[i,431]=np.random.uniform(low=0,high=8)
     internalParamArray[0,:]=np.load('baseParameterization2.npy')
     return internalParamArray
 
@@ -87,9 +88,9 @@ infectSpread=2
 numRecurInj=2
 numInfectRepeat=2
 injurySize=25
+seed=1
 result=_IIRABM.mainSimulation(oxyHeal, infectSpread, numRecurInj,
                                   numInfectRepeat, injurySize, seed,
                                   numMatrixElements,
                                   array_type(*internalParam),rank)
-
-    print("R=",result.shape)
+print("R=",result.shape)
