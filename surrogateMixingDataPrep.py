@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 mindist=1
+trainingProportion=0.7
 
 def getMasterList():
     ips=[]
@@ -61,16 +62,16 @@ def trainingSetGenerator(listOfIPs,listOfFits):
     filteredFits=np.asarray(filteredFits,dtype=np.float32)
     return filteredIPs,filteredFits
 
-IPs,Fits=getMasterList()
+# IPs,Fits=getMasterList()
+#
+# print(IPs.shape)
+# print(Fits.shape)
+#
+# np.save('TempIPs.npy',IPs)
+# np.save('TempFits.npy',Fits)
 
-print(IPs.shape)
-print(Fits.shape)
-
-np.save('TempIPs.npy',IPs)
-np.save('TempFits.npy',Fits)
-
-# IPs=np.load('TempIPs.npy')
-# Fits=np.load('TempFits.npy')
+IPs=np.load('TempIPs.npy')
+Fits=np.load('TempFits.npy')
 
 # For now, try without filtering
 fIPs=IPs
@@ -83,6 +84,8 @@ fFits=Fits
 #
 # x=np.load('FilteredIPs.npy')
 # y=np.load('FilteredFits.npy')
+x=fIPs
+y=fFits
 y=y.reshape(x.shape[0],1)
 print(x.shape)
 print(y.shape)
@@ -91,22 +94,42 @@ np.random.shuffle(z)
 
 
 numSamples=z.shape[0]
-mark=int(numSamples*0.9)
+mark=int(numSamples*trainingProportion)
 
 trainingIPs=z[0:mark,0:432]
 trainingFits=z[0:mark,432]
-testIPs=z[mark+1:numSamples,0:432]
-testFits=z[mark+1:numSamples,432]
+testIPs=z[mark:numSamples,0:432]
+testFits=z[mark:numSamples,432]
 
 mark2=numSamples-mark
 
 trainingData=[]
 trainingAnswers=[]
+testData=[]
+testAnswers=[]
+fullData=[]
+fullAnswers=[]
+
+# print(trainingIPs.shape)
+# print(testIPs.shape)
+# print(numSamples,mark,mark2)
 #0 means the first IP is the most fit, 1 means the second is
+for i in range(0,numSamples,2):
+    t1=z[i,0:432]
+    t2=z[i+1,0:432]
+    dat=np.hstack((t1,t2))
+    f1=z[i,432]
+    f2=z[i+1,432]
+    fullData.append(dat)
+    if(f1<=f2):
+        fullAnswers.append(0)
+    else:
+        fullAnswers.append(1)
+
 for i in range(0,mark,2):
     t1=trainingIPs[i,:]
     t2=trainingIPs[i+1,:]
-    dat=np.hstack(t1,t2)
+    dat=np.hstack((t1,t2))
     f1=trainingFits[i]
     f2=trainingFits[i+1]
     trainingData.append(dat)
@@ -118,7 +141,7 @@ for i in range(0,mark,2):
 for i in range(0,mark2,2):
     t1=testIPs[i,:]
     t2=testIPs[i+1,:]
-    dat=np.hstack(t1,t2)
+    dat=np.hstack((t1,t2))
     f1=testFits[i]
     f2=testFits[i+1]
     testData.append(dat)
@@ -127,10 +150,20 @@ for i in range(0,mark2,2):
     else:
         testAnswers.append(1)
 
+trainingData=np.asarray(trainingData,dtype=np.float32)
+testData=np.asarray(testData,dtype=np.float32)
+fullData=np.asarray(fullData,dtype=np.float32)
+trainingAnswers=np.asarray(trainingAnswers,dtype=np.float32)
+testAnswers=np.asarray(testAnswers,dtype=np.float32)
+fullAnswers=np.asarray(fullAnswers,dtype=np.float32)
+
+
 np.save('SM_TrainingData.npy',trainingData)
 np.save('SM_TrainingAnswers.npy',trainingAnswers)
 np.save('SM_TestData.npy',testData)
 np.save('SM_TestAnswers.npy',testAnswers)
+np.save('SM_FullData.npy',fullData)
+np.save('SM_FullAnswers.npy',fullAnswers)
 #
 #
 # # trainingData=np.load('TrainingData.npy')

@@ -1,12 +1,12 @@
 import keras
 import numpy as np
 
-#docker run --gpus all -it --rm tensorflow/tensorflow:latest-gpu-py3 python3 surrogateMixingNet.py"
+#docker run --gpus all -it -v "$PWD":/home --rm tensorflow/tensorflow:latest-gpu-py3 sh /home/surrogateMixingScript.sh
 
 lsize=4096
 
 batch_size=100
-epochs=20000
+epochs=200
 
 def getModel():
     keras.backend.clear_session()
@@ -21,10 +21,10 @@ def getModel():
     model.compile(loss='binary_crossentropy',optimizer='adam'  ,metrics=['accuracy'])
     return model
 
-trainingData=np.load('TrainingData.npy')
-trainingAnswers=np.load('TrainingAnswers.npy')
-testData=np.load('TestData.npy')
-testAnswers=np.load('TestAnswers.npy')
+trainingData=np.load('SM_TrainingData.npy')
+trainingAnswers=np.load('SM_TrainingAnswers.npy')
+testData=np.load('SM_TestData.npy')
+testAnswers=np.load('SM_TestAnswers.npy')
 
 
 def run():
@@ -36,6 +36,8 @@ def run():
     score = NN.evaluate(testData, testAnswers, verbose=0)
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
+
+#    NN.save('model_test.h5')
 
 
 run()
