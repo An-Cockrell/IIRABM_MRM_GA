@@ -63,6 +63,9 @@ def trainingSetGenerator(listOfIPs,listOfFits):
 
 IPs,Fits=getMasterList()
 
+print(IPs.shape)
+print(Fits.shape)
+
 np.save('TempIPs.npy',IPs)
 np.save('TempFits.npy',Fits)
 
