@@ -124,10 +124,10 @@ for i in range(0,mark2,2):
     else:
         testAnswers.append(1)
 
-np.save('TrainingData.npy',trainingData)
-np.save('TrainingAnswers.npy',trainingAnswers)
-np.save('TestData.npy',testData)
-np.save('TestAnswers.npy',testAnswers)
+np.save('SM_TrainingData.npy',trainingData)
+np.save('SM_TrainingAnswers.npy',trainingAnswers)
+np.save('SM_TestData.npy',testData)
+np.save('SM_TestAnswers.npy',testAnswers)
 #
 #
 # # trainingData=np.load('TrainingData.npy')
