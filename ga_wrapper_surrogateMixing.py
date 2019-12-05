@@ -7,6 +7,8 @@ import keras.backend as K
 import os
 from keras.models import load_model
 
+#docker run --gpus all -it -v "$PWD":/home --rm tensorflow/tensorflow:latest-gpu-py3 sh /home/surrogateMixingScript.sh
+
 nonZeroChance=5
 tournamentSize=2
 numBaseMatrixElements=429
@@ -15,7 +17,7 @@ baseGeneMutation=0.01
 baseParamMutation=0.01
 baseInjMutation=0.01
 
-numDataPoints=selectedTimePoints.shape[0]
+numIters=1000
 
 geneLow=-2
 geneHigh=2
@@ -91,10 +93,10 @@ def getNextParents(surrogateModel,iparray):
         candidate1=iparray[i,:]
         candidate2=iparray[i+1,:]
         candidates[k,:]=np.hstack([candidate1,candidate2])
-    answer,probability=evaluateCandidates(surrogateModel,candidate1,candidate2)
-
-    parents=np.zeros([populationSize/2,numMatrixElements])
-    for i in range(populationSize/2):
+    answer,probability=evaluateCandidates(surrogateModel,candidates)
+    numParents=int(populationSize/2)
+    parents=np.zeros([numParents,numMatrixElements])
+    for i in range(numParents):
         parents[i,:]=getNextProbabilisticParent(candidates[i],answer[i],probability[i])
 #        parents[i,:]=getNextDeterministicParent(candidates[i],answer[i])
     return parents
@@ -107,22 +109,23 @@ def getNextProbabilisticParent(candidate,answer,probability):
 def getNextDeterministicParent(candidates,answer):
     if(answer==0):
         returnParent=candidate[0:numMatrixElements]
-    if(answer==1)
-        returnParent=candidate[numMatrixElements:2*numMatrixElements]\
+    if(answer==1):
+        returnParent=candidate[numMatrixElements:2*numMatrixElements]
     return returnParent
 
 def evaluateCandidates(surrogateModel,candidates):
         #class 0 means the first candidate is fittest, class 1 is the opposite
         #predict probs give the prob of class 1
+#    candidates=np.hstack((candidate1,candidate2))
     fits=surrogateModel.predict(candidates)
     fitProbs=surrogateModel.predict_proba(candidates)
     fits=np.rint(fits)
     return fits,fitProbs
 
 def getNextGeneration(breeders,gmc,imc,pmc):
-    np.shuffle(breeders)
+    np.random.shuffle(breeders)
     newIParray=np.zeros([populationSize,numMatrixElements],dtype=np.float32)
-    for i in range(0,populationSize,2):
+    for i in range(0,int(populationSize/2),2):
         p1=breeders[i,:]
         p2=breeders[i+1,:]
         c1,c2=crossover(p1,p2)
@@ -130,8 +133,6 @@ def getNextGeneration(breeders,gmc,imc,pmc):
         c2=mutate(c2,gmc,imc,pmc)
         newIParray[i,:]=c1
         newIParray[i+1,:]=c2
-        parentArray[i,:]=p1
-        parentArray[i+1,:]=p2
     return newIParray
 
 def gaIter(surrogateModel,iparray,genNumber,gmc,imc,pmc):
@@ -139,13 +140,14 @@ def gaIter(surrogateModel,iparray,genNumber,gmc,imc,pmc):
     newIParray=getNextGeneration(breeders,gmc,imc,pmc)
     return newIParray
 
-injSize=int(sys.argv[1])
-trainedModelFile=str('XXX')
-surrogateModel = load_model(filename)
+trainedModelFile=str('model_test_132608_samples_Acc8568.h5')
+surrogateModel = load_model(trainedModelFile)
 for i in range(numIters):
+    print("Iteration",i)
     iparray=getRandomIP();
     geneMutationChance=baseGeneMutation+0.001*i
     injMutationChance=baseInjMutation+0.001*i
     paramMutationChance=baseParamMutation+0.001*i
     iparray=gaIter(surrogateModel,iparray,i,geneMutationChance,injMutationChance,paramMutationChance)
     filename=str('InternalParameterization_NN_%s'%i)
+    np.save(filename,iparray)
