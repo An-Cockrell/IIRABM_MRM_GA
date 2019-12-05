@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 mindist=1
-trainingProportion=0.7
+trainingProportion=0.5
 
 def getMasterList():
     ips=[]
@@ -110,10 +110,14 @@ testAnswers=[]
 fullData=[]
 fullAnswers=[]
 
+np.save('AllData',z)
+
 # print(trainingIPs.shape)
 # print(testIPs.shape)
 # print(numSamples,mark,mark2)
 #0 means the first IP is the most fit, 1 means the second is
+count0=0;
+count1=0;
 for i in range(0,numSamples,2):
     t1=z[i,0:432]
     t2=z[i+1,0:432]
@@ -123,8 +127,11 @@ for i in range(0,numSamples,2):
     fullData.append(dat)
     if(f1<=f2):
         fullAnswers.append(0)
+        count0=count0+1
     else:
         fullAnswers.append(1)
+        count1=count1+1
+    print(count0,count1)
 
 for i in range(0,mark,2):
     t1=trainingIPs[i,:]
@@ -137,6 +144,7 @@ for i in range(0,mark,2):
         trainingAnswers.append(0)
     else:
         trainingAnswers.append(1)
+    print(count0,count1)
 
 for i in range(0,mark2,2):
     t1=testIPs[i,:]
