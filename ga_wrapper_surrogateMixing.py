@@ -8,6 +8,7 @@ import os
 from keras.models import load_model
 
 #docker run --gpus all -it -v "$PWD":/home --rm tensorflow/tensorflow:latest-gpu-py3 sh /home/surrogateMixingScript.sh
+#docker run --gpus all -it -v "$PWD":/home --rm tensorflow/tensorflow:latest-gpu-py3 sh /home/surrogateMixingScriptBatch.sh
 
 nonZeroChance=5
 tournamentSize=2
@@ -97,16 +98,20 @@ def getNextParents(surrogateModel,iparray):
     numParents=int(populationSize/2)
     parents=np.zeros([numParents,numMatrixElements])
     for i in range(numParents):
-        parents[i,:]=getNextProbabilisticParent(candidates[i],answer[i],probability[i])
-#        parents[i,:]=getNextDeterministicParent(candidates[i],answer[i])
+#        parents[i,:]=getNextHybridParent(candidates[i],answer[i],probability[i])
+#        parents[i,:]=getNextProbabilisticParent(candidates[i],answer[i],probability[i])
+        parents[i,:]=getNextDeterministicParent(candidates[i],answer[i])
     return parents
 
-def getNextProbabilisticParent(candidate,answer,probability):
-
+def getNextHybridParent(candidate,answer,probability):
     returnParent=(1.-probability)*candidate[0:numMatrixElements]+probability*candidate[numMatrixElements:2*numMatrixElements]
     return returnParent
 
-def getNextDeterministicParent(candidates,answer):
+def getNextProbabilisticParent(candidate,answer,probability):
+    returnParent=(1.-probability)*candidate[0:numMatrixElements]+probability*candidate[numMatrixElements:2*numMatrixElements]
+    return returnParent
+
+def getNextDeterministicParent(candidate,answer):
     if(answer==0):
         returnParent=candidate[0:numMatrixElements]
     if(answer==1):
