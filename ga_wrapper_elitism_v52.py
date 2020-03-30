@@ -34,8 +34,8 @@ baseGeneMutation=0.01
 baseParamMutation=0.01
 baseInjMutation=0.01
 numOuterIters=20
-numIters=15
-numStochasticReplicates=40
+numIters=3
+numStochasticReplicates=2
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 numDataPoints=selectedTimePoints.shape[0]
@@ -84,8 +84,7 @@ eliteFraction=0.1
 numElites=int(eliteFraction*size)
 #print("NE=",numElites)
 
-runID=1
-np.random.seed(10287)
+np.random.seed(90318)
 
 def getRandomIP():
     internalParamArray=np.zeros([size,numMatrixElements],dtype=np.float32)
@@ -421,10 +420,7 @@ for k in range(numOuterIters):
         myIP=comm.scatter(iparray,root=0)
         myFitness,MNS,MXS,numViable=getFitness(numStochasticReplicates,myIP,injSize)
 
-        mnFile=str('MinMax/Mins_%s_%s_%s_%s.csv'%(runID,k,i,rank))
-        mxFile=str('MinMax/Maxs_%s_%s_%s_%s.csv'%(runID,k,i,rank))
-        np.savetxt(mnFile,MNS,delimiter=',')
-        np.savetxt(mxFile,MXS,delimiter=',')
+#    print("FITNESS_%s="%i,rank,myFitness,myIP[429:432],injSize)
 
         recvbuf=None
         sendbuf=np.float32(myFitness)
@@ -432,18 +428,18 @@ for k in range(numOuterIters):
             recvbuf=np.empty([size], dtype=np.float32)
         comm.Gather(sendbuf, recvbuf, root=0)
 
-        recvbuf2=None
-        sendbuf2=np.int16(numViable)
-        if rank==0:
-            recvbuf2=np.empty([size], dtype=np.int16)
-        comm.Gather(sendbuf2, recvbuf2, root=0)
-        if(rank==0):
-            fnamev=str('NumViable_IS%s_Gen%s_%s_%s.csv'%(injSize,k,i,runID))
-            np.savetxt(fnamev,iparray,delimiter=',')
+#        recvbuf2=None
+#        sendbuf2=numViable
+#        if rank==0:
+#            recvbuf2=np.empty([size], dtype=np.int16)
+#        comm.Gather(sendbuf2, recvbuf2, root=0)
+#        if(rank==0):
+#            fnamev=str('NumViable_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+#            np.savetxt(fnamev,iparray,delimiter=',')
 
         if(rank==0):
-            iname=str('InternalParameterization_IS%s_Gen%s_%s_%s.csv'%(injSize,k,i,runID))
-            fname=str('Fitness_IS%s_Gen%s_%s_%s.csv'%(injSize,k,i,runID))
+            iname=str('InternalParameterization_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            fname=str('Fitness_IS%s_Gen%s_%s.csv'%(injSize,k,i))
             np.savetxt(iname,iparray,delimiter=',')
             iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
             np.savetxt(fname,recvbuf,delimiter=',')

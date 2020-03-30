@@ -1,0 +1,10 @@
+#PBS -l nodes=24:ppn=24
+#PBS -l walltime=24:00:00
+#PBS -N iirabm_fullga
+#PBS -j oe
+module unload mpi/openmpi-gcc-7.3.0-3.1.1
+spack load python@2.7.14
+module load mpi/openmpi-3.1.4
+cd IIRABM_MRM_GA
+mpirun --mca btl_tcp_if_include 10.243.16.0/20 -np 576 python ga_wrapper_elitism_v6.py 27 
+

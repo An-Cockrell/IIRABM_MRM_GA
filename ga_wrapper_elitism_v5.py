@@ -16,8 +16,8 @@ size = comm.Get_size()
 
 # Ctypes initialization
 #_IIRABM = ctypes.CDLL('/home/chase/iirabm_fullga/IIRABM_RuleGA.so')
-#_IIRABM = ctypes.CDLL('/users/r/c/rcockrel/iirabm_fullga/IIRABM_RuleGA.so')
-_IIRABM = ctypes.CDLL('/global/cscratch1/sd/cockrell/IIRABM_RuleGA.so')
+_IIRABM = ctypes.CDLL('/users/r/c/rcockrel/IIRABM_MRM_GA/IIRABM_RuleGA.so')
+#_IIRABM = ctypes.CDLL('/global/cscratch1/sd/cockrell/IIRABM_RuleGA.so')
 
 # (oxyHeal,infectSpread,numRecurInj,numInfectRepeat,inj_number,seed,numMatrixElements,internalParameterization)
 _IIRABM.mainSimulation.argtypes = (ctypes.c_float, ctypes.c_int, ctypes.c_int,
@@ -33,9 +33,9 @@ numMatrixElements=432
 baseGeneMutation=0.01
 baseParamMutation=0.01
 baseInjMutation=0.01
-numOuterIters=2
-numIters=5
-numStochasticReplicates=2
+numOuterIters=20
+numIters=15
+numStochasticReplicates=40
 array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([29,59,89,119,149,179,209,239,359,479,719,1199,1919,3599,5279])
 numDataPoints=selectedTimePoints.shape[0]
@@ -84,7 +84,7 @@ eliteFraction=0.1
 numElites=int(eliteFraction*size)
 #print("NE=",numElites)
 
-np.random.seed(10287)
+np.random.seed(33333)
 
 def getRandomIP():
     internalParamArray=np.zeros([size,numMatrixElements],dtype=np.float32)
@@ -202,7 +202,7 @@ def getFitness(numReplicates,internalParam,injSize):
     fit3,mn3,mx3=compareFitness(il10Result,il10Mins,il10Maxs)
     fit4,mn4,mx4=compareFitness(gcsfResult,gcsfMins,gcsfMaxs)
     fit5,mn5,mx5=compareFitness(ifngResult,ifngMins,ifngMaxs)
-    fitsum=fit1+fit2+fit3+fit4+fit5
+    fitsum=fit1+fit2+2*fit3+fit4+fit5
 
     retMn=np.vstack((mn1,mn2,mn3,mn4,mn5))
     retMx=np.vstack((mx1,mx2,mx3,mx4,mx5))
@@ -423,23 +423,23 @@ for k in range(numOuterIters):
 #    print("FITNESS_%s="%i,rank,myFitness,myIP[429:432],injSize)
 
         recvbuf=None
-        sendbuf=myFitness
+        sendbuf=np.float32(myFitness)
         if rank==0:
             recvbuf=np.empty([size], dtype=np.float32)
         comm.Gather(sendbuf, recvbuf, root=0)
 
-        recvbuf2=None
-        sendbuf2=numViable
-        if rank==0:
-            recvbuf2=np.empty([size], dtype=np.int16)
-        comm.Gather(sendbuf2, recvbuf2, root=0)
-        if(rank==0):
-            fnamev=str('NumViable_IS%s_Gen%s_%s.csv'%(injSize,k,i))
-            np.savetxt(fnamev,iparray,delimiter=',')
+#        recvbuf2=None
+#        sendbuf2=numViable
+#        if rank==0:
+#            recvbuf2=np.empty([size], dtype=np.int16)
+#        comm.Gather(sendbuf2, recvbuf2, root=0)
+#        if(rank==0):
+#            fnamev=str('NumViable_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+#            np.savetxt(fnamev,iparray,delimiter=',')
 
         if(rank==0):
-            iname=str('InternalParameterization_IS%s_Gen%s_%s.csv'%(injSize,k,i))
-            fname=str('Fitness_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            iname=str('InternalParameterization4_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            fname=str('Fitness4_IS%s_Gen%s_%s.csv'%(injSize,k,i))
             np.savetxt(iname,iparray,delimiter=',')
             iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
             np.savetxt(fname,recvbuf,delimiter=',')
