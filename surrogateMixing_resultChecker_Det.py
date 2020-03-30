@@ -198,7 +198,7 @@ def getFitness(numReplicates,internalParam):
     retMx=np.vstack((mx1,mx2,mx3,mx4,mx5))
     return fitsum
 
-numGens=1000
+numGens=100
 genIncrement=10
 numTests=10
 
@@ -209,6 +209,7 @@ for i in range(0,numGens,genIncrement):
     myFitness=getFitness(numStochasticReplicates,myIP)
     recvbuf=None
     sendbuf=myFitness
+    print(rank,myFitness)
     if rank==0:
         recvbuf=np.empty([size], dtype=np.float32)
     comm.Gather(sendbuf, recvbuf, root=0)
