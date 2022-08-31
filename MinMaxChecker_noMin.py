@@ -1,45 +1,46 @@
 import numpy as np
 import os
 
-tnfMins=np.array([22.34,20.74,0,0,9.57,1.6,9.57,0,1.6,0,0,0,14.36,19.15,15.96])
-tnfMaxs=np.array([135.64,79,47.87,43.09,49.47,47.87,55.85,43.09,60.64,57.45,97.34,121.28,84.57,49.47,76.60])
+tnfMins=np.array([0.947885074,1.598247366,2.058404265,2.256387083,2.199038987,1.963562366,1.623701284,1.224384024,0.789916636])
+tnfMaxs=np.array([6.180651324,5.965206746,5.93996756,6.176902456,6.669168266,7.339562601,8.114341397,8.948576371,9.817961472])
 tMax=np.max(tnfMaxs)
 tnfMaxs=tnfMaxs/np.max(tMax)
 tnfMins=tnfMins/np.max(tMax)
 
-il4Mins=np.array([14,12,0,1,0,0,0,0,0,0,0,0,2,13,0])
-il4Maxs=np.array([213.53,93.23,58.15,52.13,45.11,36.09,50.13,49.12,49.12,59.15,99.25,151.38,109.27,54.14,69.17])
+il4Mins=np.array([1.309698675,0,0,0,0,0,0,0,0])
+il4Maxs=np.array([3.481727176,0,0,0,0,0,0,0,0])
 il4Max=np.max(il4Maxs)
 il4Mins=il4Mins/il4Max
 il4Maxs=il4Maxs/il4Max
 
-gcsfMins=np.array([47.75,15.92,0,0,0,0,0,19.89,47.75,23.87,3.98,0,0,3.98,0])
-gcsfMaxs=np.array([3846,11071,1102,823,831,107,139,159,640,405,508,1090,342,413,441.0])
+gcsfMins=np.array([103.7548431,94.14580326,74.56279206,52.86703522,33.97868338,18.87252035,7.265101859,0,0])
+gcsfMaxs=np.array([194.9797422,159.4010515,140.6316002,129.7762341,121.0372697,112.6951296,104.4011245,96.17333074,88.11472345])
 gcsfMax=np.max(gcsfMaxs)
 gcsfMins=gcsfMins/gcsfMax
 gcsfMaxs=gcsfMaxs/gcsfMax
 
-il10Mins=np.array([34.48,11.94,0,2.65,7.96,3.98,23.87,0,11.94,1.33,2.65,1.33,0,1.33,3.98])
-il10Maxs=np.array([228,199,454,198,228,243,284,118,842,122,184,3842,49,15,14.0])
+il10Mins=np.array([11.08606329,5.403217376,1.094709419,0,0,0,0,0,0])
+il10Maxs=np.array([21.7339152,14.93531557,11.61138007,8.674288263,7.604002664,8.204982326,8.88548607,8.680415013,11.26069095])
 il10Max=np.max(il10Maxs)
 il10Mins=il10Mins/il10Max
 il10Maxs=il10Maxs/il10Max
 
-ifngMins=np.array([52,0,4.76,0,4.76,0,9.52,0,4.76,9.52,0,4.76,9.52,0,4.76])
-ifngMaxs=np.array([11071,2857,974,850,902,759,1136,902,1017,1218,1700,2142,2142,754,587.0])
+ifngMins=np.array([6.22804419,6.572429796,6.541646886,6.097664539,5.36148558,4.490286326,3.581525757,2.682793205,1.816213722])
+ifngMaxs=np.array([13.23136666,12.17794586,11.52552842,11.31120394,11.41306254,11.67305393,11.99287699,12.32413092,12.64390878])
 ifngMax=np.max(ifngMaxs)
 ifngMins=ifngMins/ifngMax
 ifngMaxs=ifngMaxs/ifngMax
 
 tolerance=0.1
-countTol=14
+numPts=8
+countTol=numPts-1
 totalCount=0
 
 def checker(filename,filename2,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minarray,maxarray):
     x=np.loadtxt(filename,delimiter=',')
     y=np.loadtxt(filename2,delimiter=',')
     counter=0
-    for k in range(15):
+    for k in range(numPts):
         if(x[0,k]<(tnfMaxs[k]+tolerance) and
             x[1,k]<(il4Maxs[k]+tolerance) and
             x[2,k]<(il10Maxs[k]+tolerance) and
@@ -47,7 +48,7 @@ def checker(filename,filename2,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,t
             x[4,k]<(ifngMaxs[k]+tolerance)):
             counter=counter+1
     if(counter>=countTol):
-        for k in range(15):
+        for k in range(numPts):
             if(x[0,k]>maxArray[0,k]):
                 maxArray[0,k]=x[0,k]
             if(x[1,k]>maxArray[1,k]):
@@ -80,47 +81,28 @@ def checker(filename,filename2,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,t
 
     return tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray
 
-tnfArray=np.zeros([1,15],dtype=np.float32)
-il4Array=np.zeros([1,15],dtype=np.float32)
-il10Array=np.zeros([1,15],dtype=np.float32)
-gcsfArray=np.zeros([1,15],dtype=np.float32)
-ifngArray=np.zeros([1,15],dtype=np.float32)
+tnfArray=np.zeros([1,numPts],dtype=np.float32)
+il4Array=np.zeros([1,numPts],dtype=np.float32)
+il10Array=np.zeros([1,numPts],dtype=np.float32)
+gcsfArray=np.zeros([1,numPts],dtype=np.float32)
+ifngArray=np.zeros([1,numPts],dtype=np.float32)
 
-minArray=np.zeros([5,15],dtype=np.float32)
-maxArray=np.zeros([5,15],dtype=np.float32)
+minArray=np.zeros([5,numPts],dtype=np.float32)
+maxArray=np.zeros([5,numPts],dtype=np.float32)
 
 for i in range(5):
     minArray[i]=minArray[i]+100
 
-for i in range(250):
-    for j in range(1050):
-        filename1=str('MinMaxScan2/MinMax/MaxsH1_%s_%s.csv'%(i,j))
-        filename2=str('MinMaxScan2/MinMax/MaxsK1_%s_%s.csv'%(i,j))
-        filename3=str('MinMaxScan2/MinMax/MaxsK2_%s_%s.csv'%(i,j))
-        filename4=str('MinMaxScan2/MinMax/MaxsK3_%s_%s.csv'%(i,j))
-        filename5=str('MinMaxScan2/MinMax/MaxsK4_%s_%s.csv'%(i,j))
-        filename6=str('MinMaxScan2/MinMax/MaxsK5_%s_%s.csv'%(i,j))
+for i in range(100):
+    for j in range(100):
+        for k in range(300):
+            filename1=str('../Temp/MMTemp/Maxs_Neg_1_%s_%s_%s.csv'%(i,j,k))
+            filename2=str('../Temp/MMTemp/Mins_Neg_1_%s_%s_%s.csv'%(i,j,k))
 
-        filename2_1=str('MinMaxScan2/MinMax/MinsH1_%s_%s.csv'%(i,j))
-        filename2_2=str('MinMaxScan2/MinMax/MinsK1_%s_%s.csv'%(i,j))
-        filename2_3=str('MinMaxScan2/MinMax/MinsK2_%s_%s.csv'%(i,j))
-        filename2_4=str('MinMaxScan2/MinMax/MinsK3_%s_%s.csv'%(i,j))
-        filename2_5=str('MinMaxScan2/MinMax/MinsK4_%s_%s.csv'%(i,j))
-        filename2_6=str('MinMaxScan2/MinMax/MinsK5_%s_%s.csv'%(i,j))
-        if(os.path.exists(filename1)):
-            tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename1,filename2_1,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
-        if(os.path.exists(filename2)):
-            tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename2,filename2_2,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
-        if(os.path.exists(filename3)):
-            tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename3,filename2_3,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
-        if(os.path.exists(filename4)):
-            tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename4,filename2_4,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
-        if(os.path.exists(filename5)):
-            tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename5,filename2_5,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
-        if(os.path.exists(filename6)):
-            tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename6,filename2_6,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
+            if(os.path.exists(filename1) and os.path.exists(filename2)):
+                tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray=checker(filename1,filename2,tnfArray,il4Array,il10Array,gcsfArray,ifngArray,totalCount,minArray,maxArray)
 
-print("Total COunt=",totalCount)
+print("Total Count=",totalCount)
 np.save('TnfArrayNoMin.npy',tnfArray)
 np.save('IL4ArrayNoMin.npy',il4Array)
 np.save('IL10ArrayNoMin.npy',il10Array)

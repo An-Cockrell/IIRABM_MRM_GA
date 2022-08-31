@@ -361,7 +361,7 @@ def getNextGeneration(breeders,breederFits,gmc,imc,pmc):
     newIParray=np.zeros([size,numMatrixElements],dtype=np.float32)
     parentArray=np.zeros([size,numMatrixElements],dtype=np.float32)
     parentFitArray=np.zeros(size,dtype=np.float32)
-    print(breederFits)
+#    print(breederFits)
     for i in range(0,size,2):
         if(breeders.shape[0]>=2):
             temp1=np.random.randint(low=0,high=breeders.shape[0])
@@ -421,31 +421,41 @@ for k in range(numOuterIters):
         myIP=comm.scatter(iparray,root=0)
         myFitness,MNS,MXS,numViable=getFitness(numStochasticReplicates,myIP,injSize)
 
-        mnFile=str('MinMax/Mins_Neg_%s_%s_%s_%s.csv'%(runID,k,i,rank))
-        mxFile=str('MinMax/Maxs_Neg_%s_%s_%s_%s.csv'%(runID,k,i,rank))
-        np.savetxt(mnFile,MNS,delimiter=',')
-        np.savetxt(mxFile,MXS,delimiter=',')
-
-        recvbuf=None
-        sendbuf=np.float32(myFitness)
-        if rank==0:
-            recvbuf=np.empty([size], dtype=np.float32)
-        comm.Gather(sendbuf, recvbuf, root=0)
-
-        recvbuf2=None
-        sendbuf2=np.int16(numViable)
-        if rank==0:
-            recvbuf2=np.empty([size], dtype=np.int16)
-        comm.Gather(sendbuf2, recvbuf2, root=0)
+        recvbufMin=None;
+        recvbufMax=None;
+        sendbufMin=np.float32(MNS.flatten())
+        sendbufMax=np.float32(MXS.flatten())
         if(rank==0):
-            fnamev=str('NumViable_Neg_IS%s_Gen%s_%s_%s.csv'%(injSize,k,i,runID))
-            np.savetxt(fnamev,iparray,delimiter=',')
+            recvbufMin=np.empty([size*40])
+            recvbufMax=np.empty([size*40])
+        comm.Gather(sendbufMin,recvbufMin,root=0)
+        comm.Gather(sendbufMax,recvbufMax,root=0)
+        if(rank==0):
+            mnFile=str('MinMax/Mins_Neg_%s_%s.csv'%(k,i))
+            mxFile=str('MinMax/Maxs_Neg_%s_%s.csv'%(k,i))
+            np.savetxt(mnFile,recvbufMin,delimiter=',')
+            np.savetxt(mxFile,recvbufMax,delimiter=',')
+
+        recvbufFit=None
+        sendbufFit=np.float32(myFitness)
+        if rank==0:
+            recvbufFit=np.empty([size], dtype=np.float32)
+        comm.Gather(sendbufFit, recvbufFit, root=0)
+
+        recvbufV=None
+        sendbufV=np.int16(numViable)
+        if rank==0:
+            recvbufV=np.empty([size], dtype=np.int16)
+        comm.Gather(sendbufV, recvbufV, root=0)
+        if(rank==0):
+            fnamev=str('NumViable_Neg_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            np.savetxt(fnamev,recvbufV,delimiter=',')
 
         if(rank==0):
-            iname=str('InternalParameterization_Neg_IS%s_Gen%s_%s_%s.csv'%(injSize,k,i,runID))
-            fname=str('Fitness_Neg_IS%s_Gen%s_%s_%s.csv'%(injSize,k,i,runID))
+            iname=str('InternalParameterization_Neg_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            fname=str('Fitness_Neg_IS%s_Gen%s_%s.csv'%(injSize,k,i))
             np.savetxt(iname,iparray,delimiter=',')
-            iparray,avgFit,parentArray,parentFitArray=gaIter(recvbuf,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
-            np.savetxt(fname,recvbuf,delimiter=',')
+            iparray,avgFit,parentArray,parentFitArray=gaIter(recvbufFit,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
+            np.savetxt(fname,recvbufFit,delimiter=',')
             averages.append(avgFit)
             print("Average Fitness=",avgFit)
