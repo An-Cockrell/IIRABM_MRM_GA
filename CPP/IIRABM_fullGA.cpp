@@ -72,7 +72,7 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 		int i,step,iend,jend,antibiotic1,antibiotic2,istep,k,j;
 		int numABX,clpc_flag=0;
 		generator.seed(seed);
-//		cout<<"oxyHeal="<<oxyHeal<<"\n";
+		cout<<"oxyHeal="<<oxyHeal<<"\n";
 //		return allSignalsReturn;
 //		cout<<"Test10\n";
 		getRuleMatrix(internalParameterization,numMatrixElements);
@@ -88,6 +88,7 @@ extern "C" float* mainSimulation(float oxyHeal, int infectSpread,
 		numABX=0;
 		injure_infectionFRD(inj_number);
 		for(i=0;i<numTimeSteps;i++){
+			cout<<"step="<<i<<" oxy="<<oxyDeficit<<"\n";
 			step++;
 			istep++;
 			if(step==injuryStep){step=1;}

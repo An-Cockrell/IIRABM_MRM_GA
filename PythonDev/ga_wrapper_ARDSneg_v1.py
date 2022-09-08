@@ -40,45 +40,45 @@ array_type = ctypes.c_float*numMatrixElements
 selectedTimePoints=np.array([240,480,720,960,1200,1440,1680,1920])
 numDataPoints=selectedTimePoints.shape[0]
 
-tnfMins=np.array([0,0,1.1417043,2.190558001,2.550257996,2.197400028,1.285673661,0.008126575,0])
-tnfMaxs=np.array([18.89704133,17.55787162,16.54655166,16.04818221,16.23896646,17.14230867,18.60451929,20.43255062,22.48510058])
+tnfMins=np.array([0.947885074,1.598247366,2.058404265,2.256387083,2.199038987,1.963562366,1.623701284,1.224384024,0.789916636])
+tnfMaxs=np.array([6.180651324,5.965206746,5.93996756,6.176902456,6.669168266,7.339562601,8.114341397,8.948576371,9.817961472])
 tMax=np.max(tnfMaxs)
-tnfMaxs=tnfMaxs/np.max(tMax)
-tnfMins=tnfMins/np.max(tMax)
+# tnfMaxs=tnfMaxs/np.max(tMax)
+# tnfMins=tnfMins/np.max(tMax)
 
-il4Mins=np.array([0.091650789,0.098475548,0.032851762,0,0,0,0,0,0])
-il4Maxs=np.array([0.6470312,0.480755551,0.421347298,0.392763765,0.3648392,0.33320727,0.299190185,0.264745459,0.23142543])
+il4Mins=np.array([1.309698675,0,0,0,0,0,0,0,0])
+il4Maxs=np.array([3.481727176,0,0,0,0,0,0,0,0])
 il4Max=np.max(il4Maxs)
-il4Mins=il4Mins/il4Max
-il4Maxs=il4Maxs/il4Max
+# il4Mins=il4Mins/il4Max
+# il4Maxs=il4Maxs/il4Max
 
-gcsfMins=np.array([478.1821453,85.83490207,0,0,0,0,0,0,0])
-gcsfMaxs=np.array([1468.781865,1024.89909,841.8377134,636.2978643,453.3093262,310.412888,206.7209586,134.8635088,86.60650324])
+gcsfMins=np.array([103.7548431,94.14580326,74.56279206,52.86703522,33.97868338,18.87252035,7.265101859,0,0])
+gcsfMaxs=np.array([194.9797422,159.4010515,140.6316002,129.7762341,121.0372697,112.6951296,104.4011245,96.17333074,88.11472345])
 gcsfMax=np.max(gcsfMaxs)
-gcsfMins=gcsfMins/gcsfMax
-gcsfMaxs=gcsfMaxs/gcsfMax
+# gcsfMins=gcsfMins/gcsfMax
+# gcsfMaxs=gcsfMaxs/gcsfMax
 
-il10Mins=np.array([58.90552147,0,0,0,0,0,0,0,0])
-il10Maxs=np.array([244.6356051,120.9925725,32.54678338,16.2234173,25.47804393,41.30068813,61.66084906,79.02828795,83.72700204])
+il10Mins=np.array([11.08606329,5.403217376,1.094709419,0,0,0,0,0,0])
+il10Maxs=np.array([21.7339152,14.93531557,11.61138007,8.674288263,7.604002664,8.204982326,8.88548607,8.680415013,11.26069095])
 il10Max=np.max(il10Maxs)
-il10Mins=il10Mins/il10Max
-il10Maxs=il10Maxs/il10Max
+# il10Mins=il10Mins/il10Max
+# il10Maxs=il10Maxs/il10Max
 
-ifngMins=np.array([6.933581179,9.655743061,5.307354525,0,0,0,0,0,0])
-ifngMaxs=np.array([75.47119578,57.4533056,49.34511319,45.78174635,43.18777941,40.46801529,37.46629209,34.27268895,31.01694332])
+ifngMins=np.array([6.22804419,6.572429796,6.541646886,6.097664539,5.36148558,4.490286326,3.581525757,2.682793205,1.816213722])
+ifngMaxs=np.array([13.23136666,12.17794586,11.52552842,11.31120394,11.41306254,11.67305393,11.99287699,12.32413092,12.64390878])
 ifngMax=np.max(ifngMaxs)
-ifngMins=ifngMins/ifngMax
-ifngMaxs=ifngMaxs/ifngMax
+# ifngMins=ifngMins/ifngMax
+# ifngMaxs=ifngMaxs/ifngMax
 
-# masterTNFnorm=334.0
-# masterIL4norm=2162.0
-# masterIL10norm=28225.0
-# masterGCSFnorm=8238.0
-# masterIFNnorm=37726.0
+masterTNFnorm=0.1
+masterIL4norm=0.075
+masterIL10norm=0.2
+masterGCSFnorm=1
+masterIFNnorm=2
 
 geneLow=-1.5
 geneHigh=2
-critfit=15000
+critfit=8000
 
 eliteFraction=0.1
 numElites=int(eliteFraction*size)
@@ -183,18 +183,18 @@ def getFitness(numReplicates,internalParam,injSize):
     ifngResult=np.delete(ifngResult,0,0)
 
 #    print(rank,tnfResult)
-
-    tnfResult=normalizeResult(tnfResult)
-    il4Result=normalizeResult(il4Result)
-    il10Result=normalizeResult(il10Result)
-    gcsfResult=normalizeResult(gcsfResult)
-    ifngResult=normalizeResult(ifngResult)
     #
-    # tnfResult=tnfResult/masterTNFnorm
-    # il4Result=il4Result/masterIL4norm
-    # il10Result=il10Result/masterIL10norm
-    # gcsfResult=gcsfResult/masterGCSFnorm
-    # ifngResult=ifngResult/masterIFNnorm
+    tnfResult=tnfResult*masterTNFnorm
+    il4Result=il4Result*masterIL4norm
+    il10Result=il10Result*masterIL10norm
+    gcsfResult=gcsfResult*masterGCSFnorm
+    ifngResult=ifngResult*masterIFNnorm
+
+    # tnfResult=normalizeResult(tnfResult)
+    # il4Result=normalizeResult(il4Result)
+    # il10Result=normalizeResult(il10Result)
+    # gcsfResult=normalizeResult(gcsfResult)
+    # ifngResult=normalizeResult(ifngResult)
 
     numViable=compareResult(tnfResult,il4Result,il10Result,gcsfResult,ifngResult)
 
@@ -203,7 +203,7 @@ def getFitness(numReplicates,internalParam,injSize):
     fit3,mn3,mx3=compareFitness(il10Result,il10Mins,il10Maxs)
     fit4,mn4,mx4=compareFitness(gcsfResult,gcsfMins,gcsfMaxs)
     fit5,mn5,mx5=compareFitness(ifngResult,ifngMins,ifngMaxs)
-    fitsum=fit1+fit2+2*fit3+fit4+fit5
+    fitsum=fit1+fit2+fit3+fit4+fit5
 
     retMn=np.vstack((mn1,mn2,mn3,mn4,mn5))
     retMx=np.vstack((mx1,mx2,mx3,mx4,mx5))
@@ -426,13 +426,13 @@ for k in range(numOuterIters):
         sendbufMin=np.float32(MNS.flatten())
         sendbufMax=np.float32(MXS.flatten())
         if(rank==0):
-            recvbufMin=np.empty([size*40])
-            recvbufMax=np.empty([size*40])
+            recvbufMin=np.empty([size*40], dtype=np.float32)
+            recvbufMax=np.empty([size*40], dtype=np.float32)
         comm.Gather(sendbufMin,recvbufMin,root=0)
         comm.Gather(sendbufMax,recvbufMax,root=0)
         if(rank==0):
-            mnFile=str('MinMax/Mins_Pos_%s_%s.csv'%(k,i))
-            mxFile=str('MinMax/Maxs_Pos_%s_%s.csv'%(k,i))
+            mnFile=str('MinMax/Mins_Neg_%s_%s.csv'%(k,i))
+            mxFile=str('MinMax/Maxs_Neg_%s_%s.csv'%(k,i))
             np.savetxt(mnFile,recvbufMin,delimiter=',')
             np.savetxt(mxFile,recvbufMax,delimiter=',')
 
@@ -448,12 +448,12 @@ for k in range(numOuterIters):
             recvbufV=np.empty([size], dtype=np.int16)
         comm.Gather(sendbufV, recvbufV, root=0)
         if(rank==0):
-            fnamev=str('NumViable_Pos_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            fnamev=str('NumViable_Neg_IS%s_Gen%s_%s.csv'%(injSize,k,i))
             np.savetxt(fnamev,recvbufV,delimiter=',')
 
         if(rank==0):
-            iname=str('InternalParameterization_Pos_IS%s_Gen%s_%s.csv'%(injSize,k,i))
-            fname=str('Fitness_Pos_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            iname=str('InternalParameterization_Neg_IS%s_Gen%s_%s.csv'%(injSize,k,i))
+            fname=str('Fitness_Neg_IS%s_Gen%s_%s.csv'%(injSize,k,i))
             np.savetxt(iname,iparray,delimiter=',')
             iparray,avgFit,parentArray,parentFitArray=gaIter(recvbufFit,iparray,parentArray,parentFitArray,i,geneMutationChance,injMutationChance,paramMutationChance)
             np.savetxt(fname,recvbufFit,delimiter=',')
